@@ -38,8 +38,7 @@ class LoginOwner extends Component{
         .then(response => {
             if(response.status === 200){
                 sessionStorage.setItem("OwnerFirstName",response.data.ownerFirstName);
-                sessionStorage.setItem("OwnerId",response.data.ownerId);
-                sessionStorage.setItem("RestaurantId",response.data.restaurantId)
+                sessionStorage.setItem("RestaurantID",response.data._id)
                 sessionStorage.setItem("RestaurantName",response.data.restaurantName)
                 return Promise.resolve();
             }

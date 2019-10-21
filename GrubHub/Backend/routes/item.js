@@ -7,6 +7,7 @@ var message=[];
 const address = "http://localhost:"
 app.use('/uploads', express.static('uploads'))
 const multer = require('multer');
+let item = require('../model/itemModel');
 
 var storage2 = multer.diskStorage({
     destination: function (req, file, cb) {
@@ -24,37 +25,41 @@ router.post('/',
     check("itemPrice", "Item Price is needed.").not().isEmpty(),
     check("itemSection", "Item Section is needed.").not().isEmpty()]
     , function (req, res, next) {
-
-        var query = 'Insert into menuItems (ItemName,ItemPrice,ItemDesc,SectionId,restaurantId) values ("' + req.body.itemName + '","' + req.body.itemPrice + '","' + req.body.itemDesc + '","' + req.body.itemSection + '","' + req.body.restaurantId + '")'
+        const ItemName = req.body.itemName;
+        const ItemDesc = req.body.itemDesc;
+        const ItemPrice = req.body.itemPrice;  
+        const restaurantId = req.body.restaurantId;
+        const sectionId = req.body.itemSection;
+        const newItem = new item({
+            ItemName,
+            ItemDesc,
+            ItemPrice,
+            restaurantId,
+            sectionId
+        });
         message = validationResult(req).errors;
         if (message.length > 0) {
             next(message);
         } else {
-            pool.query(query, function (err, result, fields) {
+            newItem.save((err, item) => {
                 if (err) {
-                    
-                    errors = { msg: "Either the item already exits or something went wrong" }
+                    errors = { msg: "The Item already exits." }
                     message.push(errors);
                     next(message);
                 } else {
-                    res.writeHead(200, {
-                        'Content-Type': 'text/plain'
-                    });
-                    res.end("Success");
+                    res.status(200).send({itemId:item._id});
                 }
             })
         }
     })
 
 router.get('/(:data)', function (req, res, next) {
-    var query = 'Select ItemName,SectionId,ItemPrice,ItemDesc,ItemId,itemImage from menuItems where restaurantId="' + req.params.data + '"'
-    pool.query(query, function (err, result, fields) {
-        if (err) {
+    item.find({restaurantId:req.params.data}).sort({ItemName:1}).exec((err,result)=>{
+        if(err){
             next();
-        } else {
-            res.writeHead(200, {
-                'Content-Type': 'text/plain'
-            });
+        }else if(result==null){
+            res.status(200).send("");
+        }else{
             var modifiedResult = [];
             JSON.parse(JSON.stringify(result)).forEach(item => {
                 if (item.itemImage != null) {
@@ -64,73 +69,46 @@ router.get('/(:data)', function (req, res, next) {
                     modifiedResult.push(item);
                 }
             });
-            res.end(JSON.stringify(JSON.parse(JSON.stringify(modifiedResult))));
+            res.status(200).end(JSON.stringify(modifiedResult));
         }
     })
+    
 })
 router.put('/', [check("itemName", "Item Name is needed.").not().isEmpty(),
 check("itemPrice", "Item Price is needed.").not().isEmpty(),
 check("itemSection", "Item Section is needed.").not().equals("0")],
     function (req, res, next) {
-        var query = 'update menuItems set ItemName="' + req.body.itemName + '",SectionId="' + req.body.itemSection + '",ItemPrice ="' + req.body.itemPrice + '",ItemDesc="' + req.body.itemDesc + '"  where ItemId="' + req.body.itemId + '"'
-        message = validationResult(req).errors;
-        if (message.length > 0) {
-            next(message);
-        } else {
-            pool.query(query, function (err, result, fields) {
-                if (err) {
-                   next();
-                } else {
-                    res.writeHead(200, {
-                        'Content-Type': 'text/plain'
-                    });
-                    res.end("Success");
-                }
-
-            })
-        }
+        var data = { ItemName: req.body.itemName, sectionId: req.body.itemSection,ItemPrice:req.body.itemPrice,ItemDesc:req.body.itemDesc }
+        item.findOneAndUpdate({ _id: req.body.itemId }, data).exec((err, user) => {
+            if (err) {
+                next();
+            } else {
+                res.status(200).end("Success");
+            }
+        });
+        
     })
 
 router.delete('/(:data)', function (req, res, next) {
-    var query = 'Delete from menuItems where ItemId =' + req.params.data
-    pool.query(query, function (err, result, fields) {
+    item.findOneAndDelete({ _id: req.params.data}).exec((err, user) => {
         if (err) {
             next();
         } else {
-            res.writeHead(200, {
-                'Content-Type': 'text/plain'
-            });
-            res.end(JSON.stringify(JSON.parse(JSON.stringify(result))));
+            res.status(200).end("Success");
         }
-    })
+    });
 })
 router.post('/image', upload2.single('myImage'), function (req, res, next) {
-    var data = "uploads/itemImage" + req.file.originalname + ".jpeg"
-    var query = 'update menuItems set itemImage="' + data + '"  where itemId="' + req.file.originalname + '"'
-    pool.query(query, function (err, result, fields) {
+    var data = { itemImage: "uploads/itemImage" + req.file.originalname + ".jpeg" }
+    item.findOneAndUpdate({ _id: req.file.originalname }, data).exec((err, user) => {
         if (err) {
             next();
         } else {
-            res.writeHead(200, {
-                'Content-Type': 'text/plain'
-            });
-            res.end("Success");
+            res.status(200).end("Success");
         }
-    })
+    });
 });
-router.get('/maxItemId/(:data)', function (req, res, next) {
-    var query = 'Select max(ItemId) as val from sys.menuItems where restaurantId =' + req.params.data
-    pool.query(query, function (err, result, fields) {
-        if (err) {
-            next();
-        } else {
-            res.writeHead(200, {
-                'Content-Type': 'text/plain'
-            });
-            res.end(JSON.stringify(JSON.parse(JSON.stringify(result[0])).val))
-        }
-    })
-})
+
 
 router.use((error, req, res, next) => {
     res.writeHead(201, {

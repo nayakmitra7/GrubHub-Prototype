@@ -3,12 +3,12 @@ var express = require('express');
 const { check, validationResult } = require('express-validator');
 var router = express.Router();
 var app = express();
-var pool = require('../config/Base.js');
-const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const passport = require('passport');
 const saltRounds = 10;
 const address = "http://localhost:"
+
+let buyer = require('../model/buyerModel');
 app.use('/uploads', express.static('uploads'))
 const multer = require('multer');
 var storage = multer.diskStorage({
@@ -38,8 +38,6 @@ router.post('/login', [check("username", "Please fill in the User Name.").not().
                 }
             })(req, res, next);
         }
-
-
     });
 
 router.post('/signup',
@@ -53,40 +51,27 @@ router.post('/signup',
         if (message.length > 0) {
             next(message);
         } else {
-            passport.authenticate('signup', (err, validity) => {
+            passport.authenticate('signup', (err, validity, buyer) => {
                 if (!validity) {
                     next(err);
                 } else {
-                    var query = 'Select max(buyerID) as val from sys.buyer';
-                    pool.query(query, function (err, result, fields) {
-                        if (err) {
-                            next();
-                        } else {
-                           
-                            const token = jwt.sign({ userId: JSON.stringify(JSON.parse(JSON.stringify(result[0])).val) }, jwtSecret, { expiresIn: '1d' });
-                            res.status(200).send({ message: "Successful Login", tokens: token });
-                
-                        }
-                    })
-                    
+                    const token = jwt.sign({ userId: buyer._id }, jwtSecret, { expiresIn: '1d' });
+                    res.status(200).send({ message: "Successful Login", tokens: token, id:buyer._id});
                 }
             })(req, res, next);
-
         }
     });
 router.get('/detailsBasic/(:data)', function (req, res, next) {
-    var query = 'Select buyerFirstName,buyerID,buyerAddress from buyer where buyerEmail="' + req.params.data + '"'
-    pool.query(query, function (err, result, fields) {
+    buyer.findOne({ buyerEmail: req.params.data }).exec((err, post) => {
         if (err) {
             next();
-        } else {
-            res.writeHead(200, {
-                'Content-Type': 'text/plain'
-            });
-            res.end(JSON.stringify(result[0]));
-
-
         }
+        else if (post == null) {
+            next();
+        } else {
+            res.status(200).end(JSON.stringify(post));
+        }
+
     })
 })
 router.get('/details/(:data)', function (req, res, next) {
@@ -94,22 +79,20 @@ router.get('/details/(:data)', function (req, res, next) {
         if (!validity) {
             res.status(401).send({ message: "Expired session . Logging out" });
         } else {
-            var query = 'Select buyerFirstName,buyerLastName,buyerEmail,buyerPhone,buyerImage,buyerID,buyerAddress,buyerImage from buyer where buyerEmail="' + req.params.data + '"'
-            pool.query(query, function (err, result, fields) {
+            buyer.findOne({ _id: req.params.data }).exec((err, post) => {
                 if (err) {
                     next();
+                } else if (post == null) {
+                    next();
                 } else {
-                    res.writeHead(200, {
-                        'Content-Type': 'text/plain'
-                    });
-                    var results = JSON.parse(JSON.stringify(result[0]));
-                    if (JSON.parse(JSON.stringify(result[0])).buyerImage != null) {
-                        var imageAddress = address + "3001/" + JSON.parse(JSON.stringify(result[0])).buyerImage;
+                    var results = JSON.parse(JSON.stringify(post));
+                    if (JSON.parse(JSON.stringify(post)).buyerImage != null) {
+                        var imageAddress = address + "3001/" + JSON.parse(JSON.stringify(post)).buyerImage;
                         results.buyerImage = imageAddress;
                     }
-                    res.end(JSON.stringify(results));
-
+                    res.status(200).end(JSON.stringify(results));
                 }
+
             })
         }
     })(req, res, next);
@@ -126,28 +109,21 @@ check("email", "Wrong E-Mail format.").isEmail(), check("address", "Address is n
         if (message.length > 0) {
             next(message);
         } else {
-
             passport.authenticate('jwt', (err, validity) => {
                 if (!validity) {
                     res.status(401).send({ message: "Expired session . Logging out" });
                 } else {
-                    var query = 'update buyer set buyerFirstName="' + req.body.firstName + '",buyerLastName="' + req.body.lastName + '",buyerEmail ="' + req.body.email + '",buyerPhone="' + req.body.phone + '",buyerAddress="' + req.body.address + '"  where buyerID="' + req.body.ID + '"'
-                    pool.query(query, function (err, result, fields) {
+                    var update = { buyerFirstName: req.body.firstName, buyerLastName: req.body.lastName, buyerEmail: req.body.email, buyerPhone: req.body.phone, buyerAddress: req.body.address }
+                    buyer.findOneAndUpdate({ _id: req.body.ID }, update).exec((err, user) => {
                         if (err) {
                             next();
                         } else {
-                            res.writeHead(200, {
-                                'Content-Type': 'text/plain'
-                            });
-                            res.end("Success");
-                        }
+                            res.status(200).end("Success");
 
-                    })
+                        }
+                    });
                 }
             })(req, res, next);
-
-
-
         }
     })
 
@@ -156,82 +132,20 @@ router.post('/upload/photo', upload.single('myImage'), function (req, res, next)
         if (!validity) {
             res.status(401).send({ message: "Expired session . Logging out" });
         } else {
-            var data = "uploads/profileImage" + req.file.originalname + ".jpeg"
-            var query = 'update buyer set buyerImage="' + data + '"  where buyerID="' + req.file.originalname + '"'
-            pool.query(query, function (err, result, fields) {
+            var data = { buyerImage: "uploads/profileImage" + req.file.originalname + ".jpeg" }
+            buyer.findOneAndUpdate({ _id: req.file.originalname }, data).exec((err, user) => {
                 if (err) {
                     next();
                 } else {
-                    res.writeHead(200, {
-                        'Content-Type': 'text/plain'
-                    });
-                    res.end("Success");
+                    res.status(200).end("Success");
                 }
-            })
+            });
         }
     })(req, res, next);
 
 });
-router.get('/pastOrders/(:data)', function (req, res, next) {
-    passport.authenticate('jwt', (err, validity) => {
-        if (!validity) {
-            res.status(401).send({ message: "Expired session . Logging out" });
-        } else {
-            var query = 'Select restaurantName,buyerAddress,orderStatus,orderDetails,orderDate,orderId from sys.order,sys.restaurant where (order.orderStatus ="Delivered" or order.orderStatus="Cancelled" )and order.restaurantId=restaurant.restaurantId and buyerId=' + req.params.data
-            pool.query(query, function (err, result, fields) {
-                if (err) {
-                    next();
-                } else {
-                    res.writeHead(200, {
-                        'Content-Type': 'text/plain'
-                    });
-                    res.end(JSON.stringify(JSON.parse(JSON.stringify(result))));
-                }
-            })
-        }
-    })(req, res, next);
-})
-router.get('/upcomingOrders/(:data)', function (req, res, next) {
-    passport.authenticate('jwt', (err, validity) => {
-        if (!validity) {
-            res.status(401).send({ message: "Expired session . Logging out" });
-        } else {
-            var query = 'Select restaurantName,buyerAddress,orderStatus,orderDetails,orderDate,orderId from sys.order,sys.restaurant where (order.orderStatus !="Delivered" and order.orderStatus!="Cancelled" )and order.restaurantId=restaurant.restaurantId and buyerId=' + req.params.data
-            pool.query(query, function (err, result, fields) {
-                if (err) {
-                    next();
-                } else {
-                    res.writeHead(200, {
-                        'Content-Type': 'text/plain'
-                    });
-                    res.end(JSON.stringify(JSON.parse(JSON.stringify(result))));
-                }
-            })
-        }
-    })(req, res, next);
 
 
-})
-router.post('/order', function (req, res, next) {
-    passport.authenticate('jwt', (err, validity) => {
-        if (!validity) {
-            res.status(401).send({ message: "Expired session . Logging out" });
-        } else {
-            var query = "Insert INTO sys.order (restaurantId,buyerId,buyerAddress,orderStatus,orderDetails,orderDate) values ('" + req.body.restaurantId + "','" + req.body.buyerID + "','" + req.body.buyerAddress + "','" + "New" + "','" + req.body.bag + "','" + req.body.date + "')"
-            pool.query(query, function (err, result, fields) {
-                if (err) {
-                    next();
-                } else {
-                    res.writeHead(200, {
-                        'Content-Type': 'text/plain'
-                    });
-
-                    res.end();
-                }
-            })
-        }
-    })(req, res, next);
-})
 router.use((error, req, res, next) => {
     res.writeHead(201, {
         'Content-Type': 'text/plain'

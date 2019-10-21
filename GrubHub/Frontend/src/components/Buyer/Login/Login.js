@@ -40,7 +40,7 @@ class Login extends Component{
             if(response.status === 200){
                 sessionStorage.setItem("Address",response.data.buyerAddress);
                 sessionStorage.setItem("FirstName",response.data.buyerFirstName);
-                sessionStorage.setItem("BuyerId",response.data.buyerID);
+                sessionStorage.setItem("BuyerId",response.data._id);
                 return Promise.resolve();
             }
           

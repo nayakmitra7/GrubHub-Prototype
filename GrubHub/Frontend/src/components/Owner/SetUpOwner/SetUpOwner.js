@@ -17,8 +17,7 @@ class SetUpOwner extends Component {
             errorMessage: [],
             authFlag: true,
             readOnly: false,
-            ownerId: "",
-            restaurantId: "",
+            restaurantId: sessionStorage.getItem("RestaurantID"),
             restaurantName: "",
             restaurantCuisine: "",
             restaurantAddress: "",
@@ -42,7 +41,7 @@ class SetUpOwner extends Component {
 
     componentDidMount() {
         var data = ""
-        axios.get(address + '/owner/details/' + sessionStorage.getItem("OwnerId"),{headers: {Authorization: 'JWT '+cookie.get("token")}})
+        axios.get(address + '/owner/details/' + sessionStorage.getItem("RestaurantID"),{headers: {Authorization: 'JWT '+cookie.get("token")}})
             .then(response => {
                 if (response.status === 200) {
                     this.setState({
@@ -51,29 +50,20 @@ class SetUpOwner extends Component {
                         email: response.data.ownerEmail,
                         phone: response.data.ownerPhone,
                         image: response.data.ownerImage,
-                        ownerId: response.data.ownerId,
-                        restaurantId: response.data.restaurantId
+                        restaurantName: response.data.restaurantName,
+                        restaurantCuisine: response.data.restaurantCuisine,
+                        restaurantAddress: response.data.restaurantAddress,
+                        restaurantZipCode: response.data.restaurantZipCode
                     })
-                    sessionStorage.setItem("RestaurantId", this.state.restaurantId)
                 } else if (response.status === 201) {
                     this.setState({
                         errorFlag: "Some error",
                         errorMessage: response.data
                     })
                 }
-            }).then(() => {
-                if (this.state.restaurantId) {
-                    data = this.state.restaurantId;
-                    axios.get(address + '/restaurant/details/' + data,{headers: {Authorization: 'JWT '+cookie.get("token")}}).then((responses) => {
-                        this.setState({
-                            restaurantName: responses.data.restaurantName,
-                            restaurantCuisine: responses.data.restaurantCuisine,
-                            restaurantAddress: responses.data.restaurantAddress,
-                            restaurantZipCode: responses.data.restaurantZipCode
-                        })
-                    })
-                }
             }).catch(error => {
+                sessionStorage.clear();
+                localStorage.clear();
                 cookie.remove("token");
                 this.setState({ authFlag: false })
             });
@@ -126,65 +116,35 @@ class SetUpOwner extends Component {
     }
 
     promise1 = () => {
-        const data = { firstName: this.state.firstName, lastName: this.state.lastName, email: this.state.email, phone: this.state.phone, ownerId: this.state.ownerId, restaurantId: this.state.restaurantId, restaurantName: this.state.restaurantName, restaurantAddress: this.state.restaurantAddress, restaurantCuisine: this.state.restaurantCuisine, restaurantZipCode: this.state.restaurantZipCode };
 
         return new Promise((resolve, reject) => {
-            axios.post(address + '/owner/update', data,{headers: {Authorization: 'JWT '+cookie.get("token")}})
-                .then(response => {
-                    if (response.status === 201) {
-                        this.setState({
-                            errorFlag: "Some error",
-                            errorMessage: response.data
-                        })
-                        reject();
-                    }
-                    else if (response.status === 200) {
-                        resolve();
-                    }
-                }).catch(error => {
-                    cookie.remove("token");
-                    this.setState({ authFlag: false })
-                });
+            
         })
     }
     updateHandler = (e) => {
         e.preventDefault();
         axios.defaults.withCredentials = true;
-        var Cuisine = "";
-        if (this.state.restaurantCuisine) {
-            Cuisine = this.state.restaurantCuisine
-        }
-        var restData = { restaurantId: this.state.restaurantId, restaurantName: this.state.restaurantName, restaurantAddress: this.state.restaurantAddress, restaurantCuisine: Cuisine, restaurantZipCode: this.state.restaurantZipCode }
-
-        if (this.state.readOnly == false) {
-            this.promise1().then(() => {
-                axios.post(address + '/restaurant/update', restData,{headers: {Authorization: 'JWT '+cookie.get("token")}})
-                    .then(response => {
-                        sessionStorage.setItem("OwnerFirstName", this.state.firstName)
-                        sessionStorage.setItem("RestaurantName", this.state.restaurantName)
-                        if (response.status === 200) {
-                            this.setState({
-                                errorFlag: "Success",
-                                readOnly: true
-                            })
-                            setTimeout(() => {
-                                window.location.reload();
-                            }, 500);
-
-                        }
-                        else if (response.status === 201) {
-                            this.setState({
-                                errorFlag: "Some error",
-                                errorMessage: response.data,
-                            })
-                        }
-                    });
-            }).catch(error => {
-                cookie.remove("token");
-                this.setState({ authFlag: false })
-            });
-
-        }
+        const data = { firstName: this.state.firstName, lastName: this.state.lastName, email: this.state.email, phone: this.state.phone, restaurantId: this.state.restaurantId, restaurantName: this.state.restaurantName, restaurantAddress: this.state.restaurantAddress, restaurantCuisine: this.state.restaurantCuisine, restaurantZipCode: this.state.restaurantZipCode };
+        axios.post(address + '/owner/update', data,{headers: {Authorization: 'JWT '+cookie.get("token")}})
+        .then(response => {
+            if (response.status === 201) {
+                this.setState({
+                    errorFlag: "Some error",
+                    errorMessage: response.data
+                })
+            }
+            else if (response.status === 200) {
+                sessionStorage.setItem("OwnerFirstName", this.state.firstName)
+                sessionStorage.setItem("RestaurantName", this.state.restaurantName)
+                this.setState({ errorFlag: "Success" })
+            }
+        }).catch(error => {
+            sessionStorage.clear();
+            localStorage.clear();
+            cookie.remove("token");
+            this.setState({ authFlag: false })
+        });
+    
     }
     render() {
         let redirectVar = "";

@@ -29,7 +29,7 @@ class SearchPage extends Component {
     itemSearch = () => {
         if (this.state.itemSearched.length) {
             this.setState({ itemToPrint: this.state.itemSearched, filterFlag: false })
-            axios.get(address+'/restaurant/searched/' + this.state.itemSearched,{   
+            axios.get(address+'/owner/searched/' + this.state.itemSearched,{   
                 headers: {Authorization: 'JWT '+cookie.get("token")}})
                 .then(response => {
                     if (response.status === 200) {
@@ -43,6 +43,8 @@ class SearchPage extends Component {
                         })
                     }
                 }).catch(error=>{
+                    sessionStorage.clear();
+                    localStorage.clear();
                     cookie.remove("token");
                     this.setState({authFlag:false})
                 })
@@ -97,7 +99,7 @@ class SearchPage extends Component {
                             <div class="col-md-3"><img style={{ width: "80%" }} src={restaurant.restaurantImage}  class="rounded"/></div>
                             <div class="col-md-5">
                                 <div class="row" style={{ fontSize: "15px", fontWeight: "600", color: "blue" }}>
-                                    <p onClick={this.showRestaurantDetails} id={restaurant.restaurantId}>{restaurant.restaurantName}</p></div>
+                                    <p onClick={this.showRestaurantDetails} id={restaurant._id}>{restaurant.restaurantName}</p></div>
                                 <div class="row">{restaurant.restaurantCuisine}</div>
                             </div>
                             <div class="col-md-4"></div>
@@ -120,7 +122,7 @@ class SearchPage extends Component {
                                 <div class="col-md-3"><img style={{ width: "80%" }} src={restaurant.restaurantImage}  class="rounded"/></div>
                                 <div class="col-md-5">
                                     <div class="row" style={{ fontSize: "15px", fontWeight: "600", color: "blue" }}>
-                                        <p onClick={this.showRestaurantDetails} id={restaurant.restaurantId}>{restaurant.restaurantName}</p></div>
+                                        <p onClick={this.showRestaurantDetails} id={restaurant._id}>{restaurant.restaurantName}</p></div>
                                     <div class="row">{restaurant.restaurantCuisine}</div>
                                 </div>
                                 <div class="col-md-4"></div>

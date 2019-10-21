@@ -59,6 +59,7 @@ class signup extends Component {
             .then((response) => {
                 sessionStorage.setItem("username",this.state.email)
                 sessionStorage.setItem("FirstName",this.state.firstName)
+                sessionStorage.setItem("BuyerId",response.data.id)
                 if (response.status === 200) {
                     cookie.set("token",response.data.tokens);
                     this.setState({

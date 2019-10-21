@@ -13,6 +13,8 @@ class Navbar extends Component {
     this.handleLogout = this.handleLogout.bind(this);
   }
   handleLogout = () => {
+    sessionStorage.clear();
+    localStorage.clear();
     cookie.remove('token', { path: '/' })
   }
 

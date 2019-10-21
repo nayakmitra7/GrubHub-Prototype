@@ -23,13 +23,15 @@ class UpcomingOrder extends Component {
 
     }
     componentDidMount() {
-        axios.get(address+'/users/upcomingOrders/' + sessionStorage.getItem("BuyerId"),{   
+        axios.get(address+'/order/upcomingOrders/user/' + sessionStorage.getItem("BuyerId"),{   
             headers: {Authorization: 'JWT '+cookie.get("token")}})
             .then(response => {
                 if (response.status === 200) {
                     this.setState({ orders: response.data })
                 }
             }).catch(error => {
+                sessionStorage.clear();
+                localStorage.clear();
                 cookie.remove("token");
                 this.setState({ authFlag: false })
             })
@@ -37,7 +39,7 @@ class UpcomingOrder extends Component {
     trackOrder = (e) => {
         document.getElementById("TrackOrder").style.display = "block"
         var order = this.state.orders.filter((order) => {
-            if (order.orderId == e.target.id) {
+            if (order._id == e.target.id) {
                 return order
             }
         })
@@ -87,7 +89,7 @@ class UpcomingOrder extends Component {
                     </div>
                     <div class="row">
                         <div class="col-md-8"><p style={{ fontSize: '20px', marginLeft: '10px', marginTop: '10px' }}>{order.restaurantName}</p></div>
-                        <div class="col-md-1"><button class="btn " id={order.orderId} style={{ backgroundColor: 'blue', color: 'white', fontSize: '16px', marginTop: '15px' }} onClick={this.trackOrder}>Track Order</button></div>
+                        <div class="col-md-1"><button class="btn " id={order._id} style={{ backgroundColor: 'blue', color: 'white', fontSize: '16px', marginTop: '15px' }} onClick={this.trackOrder}>Track Order</button></div>
                         <div class="col-md-3"></div>
                     </div>
                     <div class="row" style={{ marginLeft: '5px' }}> {array2}</div>
@@ -104,7 +106,7 @@ class UpcomingOrder extends Component {
                 <div class="col-md-2">{item.itemCount}</div>
                 <div class="col-md-5">{item.itemName}</div>
                 <div class="col-md-3"></div>
-                <div class="col-md-2">{item.itemCostTotal}</div>
+                <div class="col-md-2">${item.itemCostTotal}</div>
             </div>)
         })
         sum=sum.toFixed(2);

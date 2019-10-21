@@ -28,13 +28,15 @@ class HomeOwner extends Component {
 
   }
   componentDidMount() {
-    axios.get(address+'/order/new/' + sessionStorage.getItem("RestaurantId"),{headers: {Authorization: 'JWT '+cookie.get("token")}})
+    axios.get(address+'/order/new/' + sessionStorage.getItem("RestaurantID"),{headers: {Authorization: 'JWT '+cookie.get("token")}})
       .then(response => {
         if (response.status === 200) {
           this.setState({ orders: response.data })
         }
 
       }).catch(error => {
+        sessionStorage.clear();
+        localStorage.clear();
         cookie.remove("token");
         this.setState({ authFlag: false })
     });
@@ -62,18 +64,22 @@ class HomeOwner extends Component {
           orders()
         }
       }).catch(error => {
+        sessionStorage.clear();
+        localStorage.clear();
         cookie.remove("token");
         this.setState({ authFlag: false })
     })
 
   }
   cancelledOrders = (e) => {
-    axios.get(address+'/order/cancelled/' + sessionStorage.getItem("RestaurantId"),{headers: {Authorization: 'JWT '+cookie.get("token")}})
+    axios.get(address+'/order/cancelled/' + sessionStorage.getItem("RestaurantID"),{headers: {Authorization: 'JWT '+cookie.get("token")}})
       .then(response => {
         if (response.status === 200) {
           this.setState({ orders: response.data })
         }
       }).catch(error => {
+        sessionStorage.clear();
+        localStorage.clear();
         cookie.remove("token");
         this.setState({ authFlag: false })
     });
@@ -89,57 +95,67 @@ class HomeOwner extends Component {
           this.newOrders();
         }
       }).catch(error => {
+        sessionStorage.clear();
+        localStorage.clear();
         cookie.remove("token");
         this.setState({ authFlag: false })
     });
   }
   newOrders = (e) => {
-    axios.get(address+'/order/new/' + sessionStorage.getItem("RestaurantId"),{headers: {Authorization: 'JWT '+cookie.get("token")}})
+    axios.get(address+'/order/new/' + sessionStorage.getItem("RestaurantID"),{headers: {Authorization: 'JWT '+cookie.get("token")}})
       .then(response => {
         if (response.status === 200) {
           this.setState({ orders: response.data })
         }
 
       }).catch(error => {
+        sessionStorage.clear();
+        localStorage.clear();
         cookie.remove("token");
         this.setState({ authFlag: false })
     });
     this.setState({ Confirmed: "", New: "active", Preparing: "", Ready: "", Cancelled: "", titleName: "New Orders" })
   }
   confirmedOrders = (e) => {
-    axios.get(address+'/order/confirmed/' + sessionStorage.getItem("RestaurantId"),{headers: {Authorization: 'JWT '+cookie.get("token")}})
+    axios.get(address+'/order/confirmed/' + sessionStorage.getItem("RestaurantID"),{headers: {Authorization: 'JWT '+cookie.get("token")}})
       .then(response => {
         if (response.status === 200) {
           this.setState({ orders: response.data })
         }
 
       }).catch(error => {
+        sessionStorage.clear();
+        localStorage.clear();
         cookie.remove("token");
         this.setState({ authFlag: false })
     });
     this.setState({ Confirmed: "active", New: "", Preparing: "", Ready: "", Cancelled: "", titleName: "Confirmed Orders" })
   }
   preparingOrders = (e) => {
-    axios.get(address+'/order/preparing/' + sessionStorage.getItem("RestaurantId"),{headers: {Authorization: 'JWT '+cookie.get("token")}})
+    axios.get(address+'/order/preparing/' + sessionStorage.getItem("RestaurantID"),{headers: {Authorization: 'JWT '+cookie.get("token")}})
       .then(response => {
         if (response.status === 200) {
           this.setState({ orders: response.data })
         }
 
       }).catch(error => {
+        sessionStorage.clear();
+        localStorage.clear();
         cookie.remove("token");
         this.setState({ authFlag: false })
     });
     this.setState({ Confirmed: "", New: "", Preparing: "active", Ready: "", Cancelled: "", titleName: "Preparing" })
   }
   readyOrders = (e) => {
-    axios.get(address+'/order/ready/' + sessionStorage.getItem("RestaurantId"),{headers: {Authorization: 'JWT '+cookie.get("token")}})
+    axios.get(address+'/order/ready/' + sessionStorage.getItem("RestaurantID"),{headers: {Authorization: 'JWT '+cookie.get("token")}})
       .then(response => {
         if (response.status === 200) {
           this.setState({ orders: response.data })
         }
 
       }).catch(error => {
+        sessionStorage.clear();
+        localStorage.clear();
         cookie.remove("token");
         this.setState({ authFlag: false })
     });
@@ -148,7 +164,7 @@ class HomeOwner extends Component {
   trackOrder = (e) => {
     document.getElementById("TrackOrder").style.display = "block"
     var order = this.state.orders.filter((order) => {
-      if (order.orderId == e.target.id) {
+      if (order._id == e.target.id) {
         return order
       }
     })
@@ -158,7 +174,7 @@ class HomeOwner extends Component {
       buyerLastName: order[0].buyerLastName,
       buyerAddress: order[0].buyerAddress,
       orderDate: order[0].orderDate,
-      orderId: order[0].orderId,
+      orderId: order[0]._id,
       orderDetails: JSON.parse(order[0].orderDetails)
     })
 
@@ -171,7 +187,7 @@ class HomeOwner extends Component {
     var redirectVar = "";
     var cancelButton = "";
     var statusButton ="";
-    if (this.state.orderStatus == "New") {
+    if (this.state.orderStatus != "Cancelled" && this.state.orderStatus != "Delivered") {
       cancelButton = (<div class="col-md-4"><button class="btn btn-danger btn-lg" style={{ width: '60%' }} id={this.state.orderId} onClick={this.cancelOrder}> Cancel Order</button></div>)
     }
     if (!this.state.authFlag) {
@@ -215,7 +231,7 @@ class HomeOwner extends Component {
           <div class="row" style={{ marginLeft: '5px' }}>
             <div class="col-md-4" ></div>
             <div class="col-md-4">
-              <button class="btn " id={order.orderId} style={{ backgroundColor: 'blue', color: 'white', fontSize: '16px', marginTop: '0px' }} onClick={this.trackOrder}> Order Details</button>
+              <button class="btn " id={order._id} style={{ backgroundColor: 'blue', color: 'white', fontSize: '16px', marginTop: '0px' }} onClick={this.trackOrder}> Order Details</button>
             </div>
             <div class="col-md-4" ></div>
           </div>

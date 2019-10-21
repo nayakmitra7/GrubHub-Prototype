@@ -37,7 +37,7 @@ class UpdateDetails extends Component {
 
 
     componentDidMount() {
-        axios.get(address + '/users/details/' + sessionStorage.getItem("username"),{   
+        axios.get(address + '/users/details/' + sessionStorage.getItem("BuyerId"),{   
             headers: {Authorization: 'JWT '+cookie.get("token")}
         }).then(response => {
                 if (response.status === 200) {
@@ -47,7 +47,7 @@ class UpdateDetails extends Component {
                         email: response.data.buyerEmail,
                         phone: response.data.buyerPhone,
                         image: response.data.buyerImage,
-                        ID: response.data.buyerID,
+                        ID: response.data._id,
                         address: response.data.buyerAddress,
                         file: response.data.buyerImage
                     })
@@ -59,6 +59,8 @@ class UpdateDetails extends Component {
                     })
                 }
             }).catch(error => {
+                sessionStorage.clear();
+                localStorage.clear();
                 cookie.remove("token");
                 this.setState({ authFlag: false })
             });
@@ -84,6 +86,8 @@ class UpdateDetails extends Component {
                     }
                     
                 }).catch(error => {
+                    sessionStorage.clear();
+                    localStorage.clear();
                     cookie.remove("token");
                     this.setState({ authFlag: false })
                 })
@@ -144,7 +148,8 @@ class UpdateDetails extends Component {
                 headers: {Authorization: 'JWT '+cookie.get("token")}
             }).then(response => {
                     if (response.status === 200) {
-                        sessionStorage.setItem("FirstName", this.state.firstName)
+                        sessionStorage.setItem("FirstName", this.state.firstName);
+                        sessionStorage.setItem("LastName", this.state.lastName);
                         var bag = localStorage.getItem(sessionStorage.getItem("username")) ? JSON.parse(localStorage.getItem(sessionStorage.getItem("username"))) : []
                         sessionStorage.setItem("username", this.state.email);
                         localStorage.setItem(sessionStorage.getItem("username"), JSON.stringify(bag));
@@ -165,6 +170,8 @@ class UpdateDetails extends Component {
                         })
                     }
                 }).catch(error => {
+                    sessionStorage.clear();
+                    localStorage.clear();
                     cookie.remove("token");
                     this.setState({ authFlag: false })
                 });
@@ -225,7 +232,7 @@ class UpdateDetails extends Component {
                         <div class="row" style={{ paddingBottom: '10px' }}>Email</div>
                         <div class="row" style={{ paddingBottom: '10px' }}><input onChange={this.emailChangeHandler} value={this.state.email} type="text" class="form-control email" name="email" readOnly={this.state.readOnly} /></div>
                         <div class="row" style={{ paddingBottom: '10px' }}>Phone</div>
-                        <div class="row" style={{ paddingBottom: '10px' }}><input onChange={this.phoneChangeHandler} value={this.state.phone} type="text" class="form-control email" name="phone" readOnly={this.state.readOnly} />
+                        <div class="row" style={{ paddingBottom: '10px' }}><input onChange={this.phoneChangeHandler} value={this.state.phone} type="number" class="form-control email" name="phone" readOnly={this.state.readOnly} />
                         </div>
                         <div class="row" style={{ paddingBottom: '10px' }}>Address</div>
                         <div class="row" style={{ paddingBottom: '10px' }}><input onChange={this.addressChangeHandler} value={this.state.address} type="text" class="form-control email" name="address" readOnly={this.state.readOnly} /></div>

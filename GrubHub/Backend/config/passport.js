@@ -7,6 +7,10 @@ const JWTstrategy = require('passport-jwt').Strategy;
 const ExtractJWT = require('passport-jwt').ExtractJwt;
 const saltRounds = 10;
 
+let buyer = require('../model/buyerModel');
+let owner = require('../model/restaurantModel');
+
+
 passport.serializeUser(function (user, done) {
     done(null, user);
 });
@@ -20,30 +24,28 @@ passport.use('login',
         passwordField: 'password'
     },
         function (username, password, done) {
-            pool.query('SELECT buyerPassword,buyerID FROM buyer where buyerEmail ="' + username + '"', function (err, result, fields) {
+            buyer.findOne({ buyerEmail: username }).exec((err, post) => {
                 if (err) {
                     return done(null, false);
+                }
+                else if (post == null) {
+                    var message = [];
+                    var errors = { msg: "Unregistered User!" };
+                    message.push(errors);
+                    return done(message, false);
                 } else {
-                    if (result.length == 0) {
-                        var message = [];
-                        var errors = { msg: "Unregistered User!" };
-                        message.push(errors);
-                        return done(message, false);
-                    } else {
-                        var row = JSON.parse(JSON.stringify(result[0]));
-                        bcrypt.compare(password, row.buyerPassword, function (err, result) {
-                            if (result) {
-                                var user = { username: username, id: row.buyerID }
-                                return done(null, user);
-                            } else {
-                                var message = [];
-                                var errors = { msg: " Invalid Password!" };
-                                message.push(errors);
-                                return done(message, false);
-                            }
-                        });
-
-                    }
+                    bcrypt.compare(password, post.buyerPassword, function (err, result) {
+    
+                        if (result) {
+                            var user = { username: username, id: post._id }
+                            return done(null, user);
+                        } else {
+                            var message = [];
+                            var errors = { msg: " Invalid Password!" };
+                            message.push(errors);
+                            return done(message, false);
+                        }
+                    });
                 }
             })
 
@@ -55,30 +57,28 @@ passport.use('loginOwner',
         passwordField: 'password'
     },
         function (username, password, done) {
-            pool.query('SELECT ownerPassword,ownerId FROM owner where ownerEmail ="' + username + '"', function (err, result, fields) {
+            owner.findOne({ ownerEmail: username }).exec((err, post) => {
                 if (err) {
                     return done(null, false);
+                }
+                else if (post == null) {
+                    var message = [];
+                    var errors = { msg: "Unregistered User!" };
+                    message.push(errors);
+                    return done(message, false);
                 } else {
-                    if (result.length == 0) {
-                        var message = [];
-                        var errors = { msg: "Unregistered User!" };
-                        message.push(errors);
-                        return done(message, false);
-                    } else {
-                        var row = JSON.parse(JSON.stringify(result[0]));
-                        bcrypt.compare(password, row.ownerPassword, function (err, result) {
-                            if (result) {
-                                var user = { username: username, id: row.buyerID }
-                                return done(null, user);
-                            } else {
-                                var message = [];
-                                var errors = { msg: " Invalid Password!" };
-                                message.push(errors);
-                                return done(message, false);
-                            }
-                        });
-
-                    }
+                    bcrypt.compare(password, post.ownerPassword, function (err, result) {
+    
+                        if (result) {
+                            var user = { username: username, id: post._id }
+                            return done(null, user);
+                        } else {
+                            var message = [];
+                            var errors = { msg: " Invalid Password!" };
+                            message.push(errors);
+                            return done(message, false);
+                        }
+                    });
                 }
             })
 
@@ -88,29 +88,96 @@ passport.use('signup',
     new LocalStrategy({
         usernameField: 'firstName',
         passwordField: 'password',
-        passReqToCallback : true
-    },function (req,firstName, password, done) {
-            console.log(req.body);
+        passReqToCallback: true
+    }, function (req, firstName, password, done) {
+        bcrypt.hash(req.body.password, saltRounds, function (err, hash) {
+            if (!err) {
+                const buyerFirstName = req.body.firstName;
+                const buyerLastName = req.body.lastName;
+                const buyerEmail = req.body.email;
+                const buyerPhone = "";
+                const buyerImage = null;
+                const buyerAddress = req.body.address;
+                const newBuyer = new buyer({
+                    buyerFirstName,
+                    buyerLastName,
+                    buyerEmail,
+                    buyerPassword: hash,
+                    buyerPhone,
+                    buyerImage,
+                    buyerAddress
+                });
+                newBuyer.save((err, buyer) => {
+                    if (err) {
+                        var message = [];
+                        var errors = { msg: "You already have an account!" };
+                        message.push(errors);
+                        done(message, false, null);
+                    } else if (buyer == null) {
+                        done(null, false, null);
+                    } else {
+                        done(null, true, buyer);
+                    }
+                })
+            } else {
+                done(null, false)
+            }
+        });
 
-            bcrypt.hash(req.body.password, saltRounds, function (err, hash) {
-                if (!err) {
-                    var query = 'INSERT INTO buyer (buyerFirstName, buyerLastName, buyerPassword,buyerEmail,buyerAddress) VALUES ("' + req.body.firstName + '","' + req.body.lastName + '","' + hash + '","' + req.body.email + '","' + req.body.address + '");'
-                    console.log(query);
-                    pool.query(query, function (err, result, fields) {
-                        if (err) {
-                            done(null,false)
-                        } else {
-                           done(null,true)
-                        }
-                    })
-                } else {
-                    console.log("error")
-                    done(null,false)
-                }
-            });
+    }
+));
+passport.use('signupOwner',
+    new LocalStrategy({
+        usernameField: 'firstName',
+        passwordField: 'password',
+        passReqToCallback: true
+    }, function (req, firstName, password, done) {        
+        bcrypt.hash(req.body.password, saltRounds, function (err, hash) {
+            if (!err) {
+                const ownerFirstName = req.body.firstName;
+                const ownerLastName = req.body.lastName;
+                const ownerEmail = req.body.email;
+                const ownerPassword =hash;
+                const ownerImage = null;
+                const ownerPhone = req.body.phone;
+                const restaurantName=req.body.restaurant;
+                const restaurantCuisine="";
+                const restaurantImage=null;
+                const restaurantAddress="";
+                const restaurantZipCode=req.body.zipcode;
+                const newOwner = new owner({
+                    ownerFirstName,
+                    ownerLastName,
+                    ownerEmail,
+                    ownerPassword,
+                    ownerImage,
+                    ownerPhone,
+                    restaurantName,
+                    restaurantCuisine,
+                    restaurantImage,
+                    restaurantAddress,
+                    restaurantZipCode
+                });
+                newOwner.save((err, owner) => {
+                    if (err) {
+                        var message = [];
+                        var errors = { msg: "You already have an account!" };
+                        message.push(errors);
+                        done(message, false, null);
+                    } else if (owner == null) {
+                        done(null, false, null);
+                    } else {
+                        done(null, true, owner);
+                    }
+                })
+            } else {
+                done(null, false)
+            }
+        });
 
-        }
-    ));
+    }
+));
+
 const opts = {
     jwtFromRequest: ExtractJWT.fromAuthHeaderWithScheme('JWT'),
     secretOrKey: jwtSecret

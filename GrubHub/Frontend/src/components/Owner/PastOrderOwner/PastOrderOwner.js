@@ -22,12 +22,14 @@ class PastOrderOwner extends Component {
 
     }
     componentDidMount() {
-        axios.get(address+'/owner/pastOrders/' + sessionStorage.getItem("RestaurantId"),{headers: {Authorization: 'JWT '+cookie.get("token")}})
+        axios.get(address+'/order/pastOrders/owner/' + sessionStorage.getItem("RestaurantID"),{headers: {Authorization: 'JWT '+cookie.get("token")}})
             .then(response => {
                 if (response.status === 200) {
                     this.setState({ orders: response.data })
                 }
             }).catch(error => {
+                sessionStorage.clear();
+                localStorage.clear();
                 cookie.remove("token");
                 this.setState({ authFlag: false })
             });
@@ -35,7 +37,7 @@ class PastOrderOwner extends Component {
     trackOrder = (e) => {
         document.getElementById("TrackOrder").style.display = "block"
         var order = this.state.orders.filter((order) => {
-            if (order.orderId == e.target.id) {
+            if (order._id == e.target.id) {
                 return order
             }
         })
@@ -85,7 +87,7 @@ class PastOrderOwner extends Component {
                     </div>
                     <div class="row">
                         <div class="col-md-8"><p style={{ fontSize: '20px', marginLeft: '10px', marginTop: '10px',marginBottom:'0px' }}>{order.buyerFirstName}  {order.buyerLastName}</p></div>
-                        <div class="col-md-1"><button class="btn " id={order.orderId} style={{ backgroundColor: 'blue', color: 'white', fontSize: '16px', marginTop: '15px' }} onClick={this.trackOrder}> Order Details</button></div>
+                        <div class="col-md-1"><button class="btn " id={order._id} style={{ backgroundColor: 'blue', color: 'white', fontSize: '16px', marginTop: '15px' }} onClick={this.trackOrder}> Order Details</button></div>
                         <div class="col-md-3"></div>
                     </div>
                     <div class="row"><p style={{marginLeft:'25px',fontSize: '15px',paddingBottom:'20px'}}>{order.buyerAddress}</p></div>

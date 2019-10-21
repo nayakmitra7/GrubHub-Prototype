@@ -77,7 +77,8 @@ class SignUpOwner extends Component {
                 if (response.status === 200) {
                     sessionStorage.setItem("OwnerFirstName",this.state.firstName)
                     sessionStorage.setItem("username",this.state.email);
-     
+                    sessionStorage.setItem("RestaurantID",response.data.ID);
+                    cookie.set("token",response.data.tokens);
                     this.setState({
                         authFlag: true,
                         errorMessage: []
@@ -95,7 +96,7 @@ class SignUpOwner extends Component {
     render() {
 
         var redirectVar = "";
-        if (cookie.load('cookie')) {
+        if (cookie.get("token")) {
             redirectVar = <Redirect to="/SetUpOwner" />
         }
         let displayMessage = null;

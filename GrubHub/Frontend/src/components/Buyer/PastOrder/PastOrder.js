@@ -21,13 +21,15 @@ class PastOrder extends Component {
 
     }
     componentDidMount() {
-        axios.get(address+'/users/pastOrders/'+sessionStorage.getItem("BuyerId") ,{   
+        axios.get(address+'/order/pastOrders/user/'+sessionStorage.getItem("BuyerId") ,{   
             headers: {Authorization: 'JWT '+cookie.get("token")}
         }).then(response => {
                 if (response.status === 200) {
                     this.setState({ orders: response.data })
                 }
             }).catch(error => {
+                sessionStorage.clear();
+                localStorage.clear();
                 cookie.remove("token");
                 this.setState({ authFlag: false })
             });
@@ -35,7 +37,7 @@ class PastOrder extends Component {
     trackOrder = (e) => {
         document.getElementById("TrackOrder").style.display = "block"
         var order = this.state.orders.filter((order) => {
-            if (order.orderId == e.target.id) {
+            if (order._id == e.target.id) {
                 return order
             }
         })
@@ -60,40 +62,38 @@ class PastOrder extends Component {
         }
         var array = [];
         if (this.state.orders.length) {
-
+            this.state.orders.map((order) => {
+                if (order.orderStatus == "Delivered" || order.orderStatus == "Cancelled") {
+                    var val = JSON.parse(order.orderDetails);
+                    var array2 = []
+    
+                    val.map((item) => {
+                        array2.push(<div class="row" style={{ marginLeft: '0px' }}>
+                            <div class="col-md-4">{item.itemName} X {item.itemCount}</div>
+                            <div class="col-md-4"></div>
+                            <div class="col-md-4"></div>
+                        </div>)
+                    })
+    
+                    array.push(<div class="row embossed-heavy" style={{ marginLeft: '100px', marginRight: '140px', marginBottom: '10px', paddingBottom: '10px', fontWeight: 'bold', backgroundColor: 'white' }}>
+                         <div class="row" style={{backgroundColor:'#f2f2f2',marginLeft:'0px',marginRight:'0px'}}>
+                            <div class="col-md-2" style={{paddingRight:'0px'}}><h5>Order Date :</h5></div>
+                            <div class="col-md-2" style={{paddingLeft:'0px'}}><h5>{order.orderDate}</h5></div>
+                            <div class="col-md-9">  </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-8"><p style={{ fontSize: '20px', marginLeft: '10px', marginTop: '10px' }}>{order.restaurantName}</p></div>
+                            <div class="col-md-1"><button class="btn " id={order._id} style={{ backgroundColor: 'blue', color: 'white', fontSize: '16px', marginTop: '15px' }} onClick={this.trackOrder}>Order Details</button></div>
+                            <div class="col-md-3"></div>
+                        </div>
+                        <div class="row" style={{ marginLeft: '5px' }}> {array2}</div>
+                    </div>)
+                }
+            })
         } else {
             array.push(<div class="NoOrder"></div>)
         }
-        this.state.orders.map((order) => {
-            if (order.orderStatus == "Delivered" || order.orderStatus == "Cancelled") {
-                var val = JSON.parse(order.orderDetails);
-                var array2 = []
-
-                val.map((item) => {
-                    array2.push(<div class="row" style={{ marginLeft: '0px' }}>
-                        <div class="col-md-4">{item.itemName} X {item.itemCount}</div>
-                        <div class="col-md-4"></div>
-                        <div class="col-md-4"></div>
-                    </div>)
-                })
-
-                array.push(<div class="row embossed-heavy" style={{ marginLeft: '100px', marginRight: '140px', marginBottom: '10px', paddingBottom: '10px', fontWeight: 'bold', backgroundColor: 'white' }}>
-                     <div class="row" style={{backgroundColor:'#f2f2f2',marginLeft:'0px',marginRight:'0px'}}>
-                        <div class="col-md-2" style={{paddingRight:'0px'}}><h5>Order Date :</h5></div>
-                        <div class="col-md-2" style={{paddingLeft:'0px'}}><h5>{order.orderDate}</h5></div>
-                        <div class="col-md-9">  </div>
-                    </div>
-                    <div class="row">
-                        <div class="col-md-8"><p style={{ fontSize: '20px', marginLeft: '10px', marginTop: '10px' }}>{order.restaurantName}</p></div>
-                        <div class="col-md-1"><button class="btn " id={order.orderId} style={{ backgroundColor: 'blue', color: 'white', fontSize: '16px', marginTop: '15px' }} onClick={this.trackOrder}>Order Details</button></div>
-                        <div class="col-md-3"></div>
-                    </div>
-                    <div class="row" style={{ marginLeft: '5px' }}> {array2}</div>
-                </div>)
-            }
-
-
-        })
+        
         var items = []
         var sum = parseFloat(0);
         this.state.orderDetails.map((item) => {

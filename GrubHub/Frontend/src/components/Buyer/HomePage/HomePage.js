@@ -19,17 +19,18 @@ class HomePage extends Component {
        
     }
     componentDidMount=(e)=>{
-        axios.get(address+'/users/details/'+sessionStorage.getItem("username"),{headers: {Authorization: 'JWT '+cookie.get("token")}})
+        axios.get(address+'/users/details/'+sessionStorage.getItem("BuyerId"),{headers: {Authorization: 'JWT '+cookie.get("token")}})
         .then(response => {
             if(response.status === 200){
                 sessionStorage.setItem("Address",response.data.buyerAddress);
                 sessionStorage.setItem("FirstName",response.data.buyerFirstName);
-                sessionStorage.setItem("BuyerId",response.data.buyerID);
-                console.log(response.data);
+                sessionStorage.setItem("LastName",response.data.buyerLastName);
                 return Promise.resolve();
             }
           
         }).catch(error => {
+            sessionStorage.clear();
+            localStorage.clear();
             cookie.remove("token");
             this.setState({ authFlag: false })
         });

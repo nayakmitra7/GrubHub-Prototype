@@ -3,114 +3,85 @@ const { check, validationResult } = require('express-validator');
 var router = express.Router();
 var app = express();
 var pool = require('../config/Base.js');
-var message=[];
+var message = [];
+let section = require('../model/sectionModel');
+let item = require('../model/itemModel');
 
-
-var checkExistingSection = (req) => {
-    return new Promise((resolve, reject) => {
-
-        var query22 = 'SELECT COUNT(menuSectionName) as con FROM sys.menuSection WHERE upper(menuSectionName)=Upper("' + req.body.sectionName + '") and restaurantId="' + req.body.restaurantId + '"';
-        pool.query(query22, function (err, result, fields) {
-            if (JSON.parse(JSON.stringify(result[0])).con) {
-                reject();
-            } else {
-                resolve();
-            }
-        })
-
-    })
-}
 
 router.post('/',
     [check("sectionName", "Section Name is needed.").not().isEmpty()]
     , function (req, res, next) {
-        var query = 'Insert into menuSection (menuSectionName,menuSectionDesc,restaurantId) values ("' + req.body.sectionName + '","' + req.body.sectionDesc + '","' + req.body.restaurantId + '")'
+        const menuSectionName = req.body.sectionName;
+        const menuSectionDesc = req.body.sectionDesc;
+        const restaurantId = req.body.restaurantId;
+        const newSection = new section({
+            menuSectionName,
+            menuSectionDesc,
+            restaurantId
+        });
         message = validationResult(req).errors;
         if (message.length > 0) {
-           next(message);
+            next(message);
         } else {
-            checkExistingSection(req).then(() => {
-                pool.query(query, function (err, result, fields) {
-                    if (err) {
-                        next();
-                    } else {
-                        res.writeHead(200, {
-                            'Content-Type': 'text/plain'
-                        });
-                        res.end("Success");
-                    }
-                })
-            }).catch(() => {
-                errors = { msg: "The Section already exits." }
-                message.push(errors);
-                next(message);
+            newSection.save((err, sect) => {
+                if (err) {
+                    errors = { msg: "The Section already exits." }
+                    message.push(errors);
+                    next(message);
+                } else {
+                    res.status(200).send("Success");
+                }
             })
-
 
         }
     })
 router.get('/(:data)', function (req, res, next) {
-    var query = 'Select menuSectionId,menuSectionName,menuSectionDesc ,count(itemName) as count from sys.menuSection left outer join sys.menuItems  on   menuSection.menuSectionId =menuItems.SectionId where menuSection.restaurantId=' + req.params.data + ' group by menuSectionId order by menuSectionName Asc';
-    pool.query(query, function (err, result, fields) {
+    section.find({ restaurantId: req.params.data }).sort({menuSectionName:1}).exec((err, result) => {
         if (err) {
             next();
         } else {
-            res.writeHead(200, {
-                'Content-Type': 'text/plain'
-            });
-            res.end(JSON.stringify(JSON.parse(JSON.stringify(result))));
+            res.status(200).end(JSON.stringify(result));
         }
+
     })
 })
 
 
 router.put('/', [check("menuSectionName", "Section Name is needed.").not().isEmpty()],
     function (req, res, next) {
-        var query = 'update menuSection set menuSectionName="' + req.body.menuSectionName + '",menuSectionDesc="' + req.body.menuSectionDesc + '"  where menuSectionId="' + req.body.menuSectionId + '"'
-         message = validationResult(req).errors;
-        if (message.length > 0) {
-            next(message);
-        } else {
-            pool.query(query, function (err, result, fields) {
-                if (err) {
-                    next();
-                } else {
-                    res.writeHead(200, {
-                        'Content-Type': 'text/plain'
-                    });
-                    res.end("Success");
-                }
-
-            })
-        }
+        var data = { menuSectionName: req.body.menuSectionName, menuSectionDesc: req.body.menuSectionDesc }
+        section.findOneAndUpdate({ _id: req.body.menuSectionId }, data).exec((err, user) => {
+            if (err) {
+                next();
+            } else {
+                res.status(200).end("Success");
+            }
+        });
     })
 
 var promiseDelete = (req) => {
     return new Promise((resolve, reject) => {
-        var query = 'Delete from menuItems where SectionId =' + req.params.data
-        pool.query(query, function (err, result, fields) {
-            if (err) {
+        item.deleteMany({sectionId:req.params.data}).exec((err,result)=>{
+            if(err){
                 reject()
-            } else {
-                resolve();
+            }else{
+                resolve()
             }
-        })
-    })
 
+        })   
+    })
 }
 router.delete('/(:data)', function (req, res, next) {
-    var query2 = 'Delete from menuSection where menuSectionId =' + req.params.data
     promiseDelete(req).then(() => {
-        pool.query(query2, function (err, result, fields) {
-            if (err) {
-                next();
-            } else {
-                res.writeHead(200, {
-                    'Content-Type': 'text/plain'
-                });
-                res.end(JSON.stringify(JSON.parse(JSON.stringify(result))));
+        section.deleteOne({_id:req.params.data}).exec((err,result)=>{
+            if(err){
+                next()
+            }else{
+                res.status(200).send("Success")
             }
+
         })
+        
     })
 })
 router.use((error, req, res, next) => {
