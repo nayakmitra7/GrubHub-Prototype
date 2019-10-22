@@ -1,8 +1,6 @@
 var express = require('express');
 const { check, validationResult } = require('express-validator');
 var router = express.Router();
-var app = express();
-var pool = require('../config/Base.js');
 var message = [];
 let section = require('../model/sectionModel');
 let item = require('../model/itemModel');

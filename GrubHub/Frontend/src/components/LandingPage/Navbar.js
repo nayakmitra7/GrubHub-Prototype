@@ -28,7 +28,7 @@ class Navbar extends Component {
       grubHub = (<a class="navbar-brand" href="/login">GRUBHUB</a>);
       grubHubForRest = (<li><a class="navbar-brand" href="/LoginOwner">GRUBHUB for Restaurants</a></li>);
       // eslint-disable-next-line no-restricted-globals
-    } else if (location.pathname.endsWith("/HomeOwner") || location.pathname.endsWith("/UpdateDetailsOwner") || location.pathname.endsWith("/MenuOwner")||location.pathname.endsWith("/PastOrderOwner")) {
+    } else if (location.pathname.endsWith("/HomeOwner") || location.pathname.endsWith("/UpdateDetailsOwner") || location.pathname.endsWith("/MenuOwner")||location.pathname.endsWith("/PastOrderOwner")||location.pathname.endsWith("/MessageOwner") ) {
       grubHub = (<a class="navbar-brand" href="/LoginOwner">GRUBHUB for Restaurants</a>);
       userDetails = (<div class="dropdown" style={{ marginRight: '85px' }}>
         <button class="btn btn-default btn-lg dropdown-toggle" type="button" id="menu1" data-toggle="dropdown">Hi, {sessionStorage.getItem("OwnerFirstName")} !
@@ -52,6 +52,13 @@ class Navbar extends Component {
             <div class="col-md-6">Profile</div>
             <div class="col-md-6">Edit Menu</div>
           </div>
+
+          <div class="row" style={{ marginTop: '20px' }}>
+            <div class="col-md-6"><li style={{ fontSize: '40px' }}><a href='/MessageOwner'><span class="glyphicon glyphicon-envelope"></span></a></li></div>
+          </div>
+          <div class="row">
+            <div class="col-md-6">Messages</div>
+          </div>
           <li role="presentation" class="divider" ></li>
           <div style={{ color: 'black', fontSize: '18px' }}>Not {sessionStorage.getItem("OwnerFirstName")} ? <a href="/" style={{ color: 'blue' }} onClick={this.handleLogout}>Sign Out</a></div>
 
@@ -59,7 +66,7 @@ class Navbar extends Component {
       </div>);
  
       // eslint-disable-next-line no-restricted-globals
-    } else if (location.pathname.endsWith("/UpdateDetails") || location.pathname.endsWith("/HomePage") || location.pathname.endsWith("/SearchPage") || location.pathname.endsWith("/DetailsPage") || location.pathname.endsWith("/ReviewPage") || location.pathname.endsWith("/UpcomingOrder") || location.pathname.endsWith("/PastOrder")) {
+    } else if (location.pathname.endsWith("/UpdateDetails") || location.pathname.endsWith("/HomePage") || location.pathname.endsWith("/SearchPage") || location.pathname.endsWith("/DetailsPage") || location.pathname.endsWith("/ReviewPage") || location.pathname.endsWith("/UpcomingOrder") || location.pathname.endsWith("/PastOrder")||location.pathname.endsWith("/Message")) {
       grubHub = (<a class="navbar-brand" href="/login">GRUBHUB</a>);
       userDetails = (<div class="dropdown" style={{ marginRight: '85px' }}>
         <button class="btn btn-default btn-lg dropdown-toggle" type="button" id="menu1" data-toggle="dropdown">Hi, {sessionStorage.getItem("FirstName")} !
@@ -81,6 +88,13 @@ class Navbar extends Component {
           <div class="row">
             <div class="col-md-6">Update Details</div>
             <div class="col-md-6">Home</div>
+          </div>
+
+          <div class="row" style={{ marginTop: '20px' }}>
+            <div class="col-md-6"><li style={{ fontSize: '40px' }}><a href='/Message'><span class="glyphicon glyphicon-envelope"></span></a></li></div>
+          </div>
+          <div class="row">
+            <div class="col-md-6">Messages</div>
           </div>
           <li role="presentation" class="divider" ></li>
           <div style={{ color: 'black', fontSize: '18px' }}>Not {sessionStorage.getItem("FirstName")} ? <a href="/" style={{ color: 'blue' }} onClick={this.handleLogout}>Sign Out</a></div>

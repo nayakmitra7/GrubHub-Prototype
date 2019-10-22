@@ -5,9 +5,8 @@ var router = express.Router();
 var app = express();
 const jwt = require('jsonwebtoken');
 const passport = require('passport');
-const saltRounds = 10;
 const address = "http://localhost:"
-
+var message = [];
 let buyer = require('../model/buyerModel');
 app.use('/uploads', express.static('uploads'))
 const multer = require('multer');
@@ -21,7 +20,6 @@ var storage = multer.diskStorage({
     }
 });
 var upload = multer({ storage: storage });
-var message = [];
 
 router.post('/login', [check("username", "Please fill in the User Name.").not().isEmpty(), check("password", "Please fill in the Password.  ").not().isEmpty()],
     function (req, res, next) {

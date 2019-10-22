@@ -35,7 +35,7 @@ app.use(function (req, res, next) {
 app.use('/users', require('./users.js'));
 app.use('/owner', require('./restaurant.js'));
 app.use('/order', passport.authenticate('jwt'), require('./order.js'));
-//app.use('/restaurant', passport.authenticate('jwt'),require('./restaurant.js'));
+app.use('/message', passport.authenticate('jwt'),require('./message.js'));
 app.use('/item', passport.authenticate('jwt'),require('./item.js'));
 app.use('/section', passport.authenticate('jwt'),require('./section.js'));
 

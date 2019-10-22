@@ -2,7 +2,7 @@ import React, { Component } from 'react';
 import cookie from 'js-cookie';
 import { Redirect } from 'react-router';
 import axios from 'axios';
-import {address} from '../../../constant'
+import { address } from '../../../constant'
 import '../../../App.css';
 
 class HomeOwner extends Component {
@@ -23,12 +23,15 @@ class HomeOwner extends Component {
       Cancelled: "",
       titleName: "New Orders",
       orderId: "",
-      authFlag:true
+      authFlag: true,
+      buyerId: "",
+      messageBox: "",
+      messageFlag: false
     }
-
+    this.messageBoxChangeHandler = this.messageBoxChangeHandler.bind(this);
   }
   componentDidMount() {
-    axios.get(address+'/order/new/' + sessionStorage.getItem("RestaurantID"),{headers: {Authorization: 'JWT '+cookie.get("token")}})
+    axios.get(address + '/order/new/' + sessionStorage.getItem("RestaurantID"), { headers: { Authorization: 'JWT ' + cookie.get("token") } })
       .then(response => {
         if (response.status === 200) {
           this.setState({ orders: response.data })
@@ -39,25 +42,30 @@ class HomeOwner extends Component {
         localStorage.clear();
         cookie.remove("token");
         this.setState({ authFlag: false })
+      });
+  }
+  messageBoxChangeHandler = (e) => {
+    this.setState({
+      messageBox: e.target.value
     });
   }
-  statusChange=(e)=>{
-    var data=""
-    var orders=""
-    if(this.state.orderStatus=="New"){
-      data={status:"Confirmed",id:this.state.orderId}
-      orders=this.newOrders
-    }else if(this.state.orderStatus=="Confirmed"){
-      data={status:"Preparing",id:this.state.orderId}
-      orders=this.confirmedOrders
-    }else if(this.state.orderStatus=="Preparing"){
-      data={status:"Ready",id:this.state.orderId}
-      orders=this.preparingOrders
-    }else if(this.state.orderStatus=="Ready"){
-      data={status:"Delivered",id:this.state.orderId}
-      orders=this.readyOrders
+  statusChange = (e) => {
+    var data = ""
+    var orders = ""
+    if (this.state.orderStatus == "New") {
+      data = { status: "Confirmed", id: this.state.orderId }
+      orders = this.newOrders
+    } else if (this.state.orderStatus == "Confirmed") {
+      data = { status: "Preparing", id: this.state.orderId }
+      orders = this.confirmedOrders
+    } else if (this.state.orderStatus == "Preparing") {
+      data = { status: "Ready", id: this.state.orderId }
+      orders = this.preparingOrders
+    } else if (this.state.orderStatus == "Ready") {
+      data = { status: "Delivered", id: this.state.orderId }
+      orders = this.readyOrders
     }
-    axios.post(address+'/order/statusChange',data,{headers: {Authorization: 'JWT '+cookie.get("token")}})
+    axios.post(address + '/order/statusChange', data, { headers: { Authorization: 'JWT ' + cookie.get("token") } })
       .then(response => {
         if (response.status === 200) {
           this.modalClose();
@@ -68,11 +76,11 @@ class HomeOwner extends Component {
         localStorage.clear();
         cookie.remove("token");
         this.setState({ authFlag: false })
-    })
+      })
 
   }
   cancelledOrders = (e) => {
-    axios.get(address+'/order/cancelled/' + sessionStorage.getItem("RestaurantID"),{headers: {Authorization: 'JWT '+cookie.get("token")}})
+    axios.get(address + '/order/cancelled/' + sessionStorage.getItem("RestaurantID"), { headers: { Authorization: 'JWT ' + cookie.get("token") } })
       .then(response => {
         if (response.status === 200) {
           this.setState({ orders: response.data })
@@ -82,13 +90,13 @@ class HomeOwner extends Component {
         localStorage.clear();
         cookie.remove("token");
         this.setState({ authFlag: false })
-    });
+      });
     this.setState({ Confirmed: "", New: "", Preparing: "", Ready: "", Cancelled: "active", titleName: "Cancelled Orders" })
 
   }
   cancelOrder = (e) => {
     var data = { id: e.target.id }
-    axios.post(address+'/order/cancel/', data,{headers: {Authorization: 'JWT '+cookie.get("token")}})
+    axios.post(address + '/order/cancel/', data, { headers: { Authorization: 'JWT ' + cookie.get("token") } })
       .then(response => {
         if (response.status === 200) {
           this.modalClose();
@@ -99,10 +107,10 @@ class HomeOwner extends Component {
         localStorage.clear();
         cookie.remove("token");
         this.setState({ authFlag: false })
-    });
+      });
   }
   newOrders = (e) => {
-    axios.get(address+'/order/new/' + sessionStorage.getItem("RestaurantID"),{headers: {Authorization: 'JWT '+cookie.get("token")}})
+    axios.get(address + '/order/new/' + sessionStorage.getItem("RestaurantID"), { headers: { Authorization: 'JWT ' + cookie.get("token") } })
       .then(response => {
         if (response.status === 200) {
           this.setState({ orders: response.data })
@@ -113,11 +121,11 @@ class HomeOwner extends Component {
         localStorage.clear();
         cookie.remove("token");
         this.setState({ authFlag: false })
-    });
+      });
     this.setState({ Confirmed: "", New: "active", Preparing: "", Ready: "", Cancelled: "", titleName: "New Orders" })
   }
   confirmedOrders = (e) => {
-    axios.get(address+'/order/confirmed/' + sessionStorage.getItem("RestaurantID"),{headers: {Authorization: 'JWT '+cookie.get("token")}})
+    axios.get(address + '/order/confirmed/' + sessionStorage.getItem("RestaurantID"), { headers: { Authorization: 'JWT ' + cookie.get("token") } })
       .then(response => {
         if (response.status === 200) {
           this.setState({ orders: response.data })
@@ -128,11 +136,11 @@ class HomeOwner extends Component {
         localStorage.clear();
         cookie.remove("token");
         this.setState({ authFlag: false })
-    });
+      });
     this.setState({ Confirmed: "active", New: "", Preparing: "", Ready: "", Cancelled: "", titleName: "Confirmed Orders" })
   }
   preparingOrders = (e) => {
-    axios.get(address+'/order/preparing/' + sessionStorage.getItem("RestaurantID"),{headers: {Authorization: 'JWT '+cookie.get("token")}})
+    axios.get(address + '/order/preparing/' + sessionStorage.getItem("RestaurantID"), { headers: { Authorization: 'JWT ' + cookie.get("token") } })
       .then(response => {
         if (response.status === 200) {
           this.setState({ orders: response.data })
@@ -143,11 +151,11 @@ class HomeOwner extends Component {
         localStorage.clear();
         cookie.remove("token");
         this.setState({ authFlag: false })
-    });
+      });
     this.setState({ Confirmed: "", New: "", Preparing: "active", Ready: "", Cancelled: "", titleName: "Preparing" })
   }
   readyOrders = (e) => {
-    axios.get(address+'/order/ready/' + sessionStorage.getItem("RestaurantID"),{headers: {Authorization: 'JWT '+cookie.get("token")}})
+    axios.get(address + '/order/ready/' + sessionStorage.getItem("RestaurantID"), { headers: { Authorization: 'JWT ' + cookie.get("token") } })
       .then(response => {
         if (response.status === 200) {
           this.setState({ orders: response.data })
@@ -158,7 +166,7 @@ class HomeOwner extends Component {
         localStorage.clear();
         cookie.remove("token");
         this.setState({ authFlag: false })
-    });
+      });
     this.setState({ Confirmed: "", New: "", Preparing: "", Ready: "active", Cancelled: "", titleName: "Ready to go" })
   }
   trackOrder = (e) => {
@@ -179,14 +187,63 @@ class HomeOwner extends Component {
     })
 
   }
+  messageSendHandler = (e) => {
+    var today = new Date();
+    var date = today.getFullYear() + '-' + (today.getMonth() + 1) + '-' + today.getDate();
+    var time = today.getHours() + ":" + today.getMinutes();
+    var CurrentDateTime = date + ' ' + time;
+    var data = { senderId: sessionStorage.getItem("RestaurantID"), senderFirstName: sessionStorage.getItem("RestaurantName"), senderLastName: "", receiverId: this.state.buyerId, receiverFirstName: this.state.buyerFirstName, receiverLastName: this.state.buyerLastName, message: this.state.messageBox, orderDate: this.state.orderDate, messageDate: CurrentDateTime }
+
+    axios.post(address + '/message', data, { headers: { Authorization: 'JWT ' + cookie.get("token") } })
+      .then(response => {
+        if (response.status === 200) {
+          this.setState({ messageFlag: false, messageBox: "" })
+          document.getElementById("Message").style.display = "none";
+
+        } else if (response.status == 201) {
+          this.setState({ messageFlag: true })
+        }
+
+      }).catch(error => {
+        sessionStorage.clear();
+        localStorage.clear();
+        cookie.remove("token");
+        this.setState({ authFlag: false })
+      });
+
+  }
+  sendMessage = (e) => {
+    document.getElementById("Message").style.display = "block"
+    var order = this.state.orders.filter((order) => {
+      if (order._id == e.target.id) {
+        return order
+      }
+    })
+    this.setState({
+      buyerFirstName: order[0].buyerFirstName,
+      buyerLastName: order[0].buyerLastName,
+      buyerAddress: order[0].buyerAddress,
+      orderDate: order[0].orderDate,
+      buyerId: order[0].buyerId,
+    })
+
+  }
   modalClose = () => {
     document.getElementById("TrackOrder").style.display = "None"
+  }
+  modalCloseMessage = () => {
+    this.setState({ messageFlag: false, messageBox: "" })
+    document.getElementById("Message").style.display = "None";
   }
   render() {
 
     var redirectVar = "";
     var cancelButton = "";
-    var statusButton ="";
+    var statusButton = "";
+    var messageDisplay = ""
+    if (this.state.messageFlag == true) {
+      messageDisplay = (<ul class="li alert alert-danger">Message body is needed</ul>);
+    }
     if (this.state.orderStatus != "Cancelled" && this.state.orderStatus != "Delivered") {
       cancelButton = (<div class="col-md-4"><button class="btn btn-danger btn-lg" style={{ width: '60%' }} id={this.state.orderId} onClick={this.cancelOrder}> Cancel Order</button></div>)
     }
@@ -215,11 +272,14 @@ class HomeOwner extends Component {
           <div class="row" style={{ backgroundColor: '#f2f2f2', marginLeft: '0px', marginRight: '0px' }}>
             <div class="col-md-2" style={{ paddingRight: '0px' }}><h5>Order Date :</h5></div>
             <div class="col-md-2" style={{ paddingLeft: '0px' }}><h5>{order.orderDate}</h5></div>
-            <div class="col-md-9">  </div>
+            <div class="col-md-5"></div>
+            <div class="col-md-3">
+              <button class="btn " id={order._id} style={{ backgroundColor: 'Green', color: 'white', fontSize: '16px', marginTop: '0px', marginTop: '10px' }} onClick={this.sendMessage}> Send A Message</button>
+            </div>
           </div>
           <div class="row">
             <div class="col-md-8"><p style={{ fontSize: '20px', marginLeft: '10px', marginTop: '10px', marginBottom: '0px' }}>{order.buyerFirstName}  {order.buyerLastName}</p></div>
-            <div class="col-md-2"><h5 style={{fontWeight:'bold'}}>Items {count}</h5></div>
+            <div class="col-md-2"><h5 style={{ fontWeight: 'bold' }}>Items {count}</h5></div>
             <div class="col-md-2"></div>
           </div>
 
@@ -262,38 +322,38 @@ class HomeOwner extends Component {
     var progressBar = []
     switch (this.state.orderStatus) {
       case 'New':
-        statusButton=(<div class="row"> 
-        <div class="col-md-2"></div>
-        <div class="col-md-4"><button class="btn" style={{backgroundColor:'Green',color:'white',width:'200%'}} onClick={this.statusChange} >Confirm</button></div>
-        <div class="col-md-4"></div>
+        statusButton = (<div class="row">
+          <div class="col-md-2"></div>
+          <div class="col-md-4"><button class="btn" style={{ backgroundColor: 'Green', color: 'white', width: '200%' }} onClick={this.statusChange} >Confirm</button></div>
+          <div class="col-md-4"></div>
         </div>)
         progressBar.push(<div class="progress-bar bg-danger" style={{ width: "20%" }}>Order Placed</div>)
         break;
       case 'Confirmed':
-          statusButton=(<div class="row"> 
+        statusButton = (<div class="row">
           <div class="col-md-2"></div>
-          <div class="col-md-4"><button class="btn" style={{backgroundColor:'Green',color:'white',width:'200%'}} onClick={this.statusChange} >Preparing</button></div>
+          <div class="col-md-4"><button class="btn" style={{ backgroundColor: 'Green', color: 'white', width: '200%' }} onClick={this.statusChange} >Preparing</button></div>
           <div class="col-md-4"></div>
-          </div>)
+        </div>)
         progressBar.push(<div class="progress-bar bg-danger" style={{ width: "20%" }}>Order Placed</div>)
         progressBar.push(<div class="progress-bar bg-danger" style={{ width: "20%" }}>Order Confirmed </div>)
         break;
       case 'Preparing':
-          statusButton=(<div class="row"> 
+        statusButton = (<div class="row">
           <div class="col-md-2"></div>
-          <div class="col-md-4"><button class="btn" style={{backgroundColor:'Green',color:'white',width:'200%'}} onClick={this.statusChange}>Ready</button></div>
+          <div class="col-md-4"><button class="btn" style={{ backgroundColor: 'Green', color: 'white', width: '200%' }} onClick={this.statusChange}>Ready</button></div>
           <div class="col-md-4"></div>
-          </div>)
+        </div>)
         progressBar.push(<div class="progress-bar bg-danger" style={{ width: "20%" }}>Order Placed</div>)
         progressBar.push(<div class="progress-bar bg-danger" style={{ width: "20%" }}>Order Confirmed </div>)
         progressBar.push(<div class="progress-bar bg-danger" style={{ width: "20%" }}>Preparing</div>)
         break;
       case 'Ready':
-          statusButton=(<div class="row"> 
+        statusButton = (<div class="row">
           <div class="col-md-2"></div>
-          <div class="col-md-4"><button class="btn" style={{backgroundColor:'Green',color:'white',width:'200%'}} onClick={this.statusChange} >Picked Up</button></div>
+          <div class="col-md-4"><button class="btn" style={{ backgroundColor: 'Green', color: 'white', width: '200%' }} onClick={this.statusChange} >Picked Up</button></div>
           <div class="col-md-4"></div>
-          </div>)
+        </div>)
         progressBar.push(<div class="progress-bar bg-danger" style={{ width: "20%" }}>Order Placed</div>)
         progressBar.push(<div class="progress-bar bg-danger" style={{ width: "20%" }}>Order Confirmed </div>)
         progressBar.push(<div class="progress-bar bg-danger" style={{ width: "20%" }}>Preparing</div>)
@@ -318,12 +378,12 @@ class HomeOwner extends Component {
         {redirectVar}
         <p style={{ color: 'crimson', fontWeight: '900', fontSize: '40px', marginLeft: '600px', marginTop: '0px' }}>{sessionStorage.getItem("RestaurantName")}</p>
         <p style={{ color: 'blue', fontWeight: '900', fontSize: '25px', marginLeft: '40px', marginTop: '0px' }}>{this.state.titleName}</p>
-        <ul class="nav nav-tabs" style={{fontSize:'18px',marginLeft:'55px'}}>
+        <ul class="nav nav-tabs" style={{ fontSize: '18px', marginLeft: '55px' }}>
           <li class={this.state.New}><a onClick={this.newOrders}><p>New</p> </a></li>
-          <li class={this.state.Confirmed}><a onClick={this.confirmedOrders}><p style={{paddingBottom:'0px'}}>Confirmed</p></a></li>
-          <li class={this.state.Preparing}><a onClick={this.preparingOrders}><p style={{paddingBottom:'0px'}}>Preparing</p></a></li>
-          <li class={this.state.Ready}><a onClick={this.readyOrders}><p style={{paddingBottom:'0px'}}>Ready</p></a></li>
-          <li class={this.state.Cancelled}><a onClick={this.cancelledOrders}><p style={{paddingBottom:'0px'}}>Cancelled</p></a></li>
+          <li class={this.state.Confirmed}><a onClick={this.confirmedOrders}><p style={{ paddingBottom: '0px' }}>Confirmed</p></a></li>
+          <li class={this.state.Preparing}><a onClick={this.preparingOrders}><p style={{ paddingBottom: '0px' }}>Preparing</p></a></li>
+          <li class={this.state.Ready}><a onClick={this.readyOrders}><p style={{ paddingBottom: '0px' }}>Ready</p></a></li>
+          <li class={this.state.Cancelled}><a onClick={this.cancelledOrders}><p style={{ paddingBottom: '0px' }}>Cancelled</p></a></li>
 
         </ul>
 
@@ -366,13 +426,43 @@ class HomeOwner extends Component {
                 </div>
               </div>
               <div class="modal-footer">
-                
-                      {statusButton}
+
+                {statusButton}
               </div>
             </div>
           </div>
         </div>
 
+        <div class="modal" id="Message" >
+          <div class="modal-dialog" style={{ width: '850px', height: '1850px' }}>
+            <div class="modal-content">
+
+              <div class="modal-header">
+                <div class="row">
+                  <div class="col-md-4"></div>
+                  <div class="col-md-6"><h1 class="modal-title"> Send a Message</h1></div>
+                  <div clas="col-md-1"></div>
+                  <div class="col-md-1"><button type="button" id="closeSection" data-dismiss="modal" onClick={this.modalCloseMessage}>&times;</button></div>
+                </div>
+              </div>
+              <div class="modal-body" style={{ height: '200%' }}>
+
+                <div class="row" style={{ marginBottom: '20px', textAlign: 'center' }}><h3>{this.state.buyerFirstName} {this.state.buyerLastName}</h3></div>
+                <div class="row" style={{ marginBottom: '20px', textAlign: 'center' }}>{this.state.buyerAddress} </div>
+                <div class="row" style={{ marginBottom: '20px', textAlign: 'center' }}> <textarea rows="4" cols="40" onChange={this.messageBoxChangeHandler} name="messageBox" value={this.state.messageBox}></textarea></div>
+
+              </div>
+              <div class="modal-footer">
+                <div class="row">
+                  <div class="col-md-2"></div>
+                  <div class="col-md-4"><button class="btn" style={{ backgroundColor: 'Green', color: 'white', width: '200%' }} onClick={this.messageSendHandler} >Send</button></div>
+                  <div class="col-md-4"></div>
+                </div>
+                <div class="row">{messageDisplay}</div>
+              </div>
+            </div>
+          </div>
+        </div>
 
       </div>
 

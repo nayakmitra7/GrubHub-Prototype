@@ -2,7 +2,6 @@ var express = require('express');
 const { check, validationResult } = require('express-validator');
 var router = express.Router();
 var app = express();
-var pool = require('../config/Base.js');
 var message=[];
 const address = "http://localhost:"
 app.use('/uploads', express.static('uploads'))

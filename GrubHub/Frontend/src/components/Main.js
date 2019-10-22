@@ -16,6 +16,8 @@ import UpcomingOrder from './Buyer/UpcomingOrder/UpcomingOrder'
 import PastOrder from './Buyer/PastOrder/PastOrder'
 import PastOrderOwner from './Owner/PastOrderOwner/PastOrderOwner'
 import SetUpOwner from './Owner/SetUpOwner/SetUpOwner'
+import MessageOwner from './Owner/MessageOwner/MessageOwner'
+import Message from './Buyer/Message/Message'
 
 class Main extends Component {
     render(){
@@ -38,7 +40,8 @@ class Main extends Component {
                 <Route path="/PastOrder" component={PastOrder}/>
                 <Route path="/PastOrderOwner" component={PastOrderOwner}/>
                 <Route path="/SetUpOwner" component={SetUpOwner}/>
-
+                <Route path="/MessageOwner" component={MessageOwner}/>
+                <Route path="/Message" component={Message}/>
                 
             </div>
         )

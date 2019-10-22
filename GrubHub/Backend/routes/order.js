@@ -1,9 +1,7 @@
 var express = require('express');
 var router = express.Router();
 var app = express();
-var pool = require('../config/Base.js');
 app.use('/uploads', express.static('uploads'))
-var message = [];
 let order = require('../model/orderModel');
 
 router.post('/placeOrder', function (req, res, next) {
@@ -28,19 +26,7 @@ router.post('/placeOrder', function (req, res, next) {
     })
 
 })
-router.get('/orders/(:data)', function (req, res, next) {
-    var query = 'select orderId,restaurantId,buyerId,buyerAddress,orderStatus,orderDetails,orderDate,buyerFirstName,buyerLastName from sys.order where (orderStatus="Delivered" or orderStatus="Cancelled") and order.restaurantId =' + req.params.data
-    pool.query(query, function (err, result, fields) {
-        if (err) {
-            next();
-        } else {
-            res.writeHead(200, {
-                'Content-Type': 'text/plain'
-            });
-            res.end(JSON.stringify(JSON.parse(JSON.stringify(result))));
-        }
-    })
-})
+
 router.get('/new/(:data)', function (req, res, next) {
     order.find({$and:[{ restaurantId: req.params.data },{orderStatus:"New"}]}).exec((err, result) => {
         if (err) {
