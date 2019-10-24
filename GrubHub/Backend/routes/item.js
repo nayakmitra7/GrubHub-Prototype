@@ -29,12 +29,14 @@ router.post('/',
         const ItemPrice = req.body.itemPrice;  
         const restaurantId = req.body.restaurantId;
         const sectionId = req.body.itemSection;
+        const itemImage=null;
         const newItem = new item({
             ItemName,
             ItemDesc,
             ItemPrice,
             restaurantId,
-            sectionId
+            sectionId,
+            itemImage
         });
         message = validationResult(req).errors;
         if (message.length > 0) {
@@ -53,6 +55,7 @@ router.post('/',
     })
 
 router.get('/(:data)', function (req, res, next) {
+    
     item.find({restaurantId:req.params.data}).sort({ItemName:1}).exec((err,result)=>{
         if(err){
             next();
@@ -73,6 +76,9 @@ router.get('/(:data)', function (req, res, next) {
     })
     
 })
+  
+
+
 router.put('/', [check("itemName", "Item Name is needed.").not().isEmpty(),
 check("itemPrice", "Item Price is needed.").not().isEmpty(),
 check("itemSection", "Item Section is needed.").not().equals("0")],
@@ -99,6 +105,8 @@ router.delete('/(:data)', function (req, res, next) {
 })
 router.post('/image', upload2.single('myImage'), function (req, res, next) {
     var data = { itemImage: "uploads/itemImage" + req.file.originalname + ".jpeg" }
+    console.log(data)
+
     item.findOneAndUpdate({ _id: req.file.originalname }, data).exec((err, user) => {
         if (err) {
             next();

@@ -28,7 +28,7 @@ router.post('/placeOrder', function (req, res, next) {
 })
 
 router.get('/new/(:data)', function (req, res, next) {
-    order.find({$and:[{ restaurantId: req.params.data },{orderStatus:"New"}]}).exec((err, result) => {
+    order.find({$and:[{ restaurantId: req.params.data },{orderStatus:"New"}]}).sort({$natural:-1}).exec((err, result) => {
         if (err) {
             next();
         } else if (result == null) {
@@ -39,7 +39,7 @@ router.get('/new/(:data)', function (req, res, next) {
     })
 })
 router.get('/confirmed/(:data)', function (req, res, next) {
-    order.find({$and:[{ restaurantId: req.params.data },{orderStatus:"Confirmed"}]}).exec((err, result) => {
+    order.find({$and:[{ restaurantId: req.params.data },{orderStatus:"Confirmed"}]}).sort({$natural:-1}).exec((err, result) => {
         if (err) {
             next();
         } else if (result == null) {
@@ -50,7 +50,7 @@ router.get('/confirmed/(:data)', function (req, res, next) {
     })
 })
 router.get('/preparing/(:data)', function (req, res, next) {
-    order.find({$and:[{ restaurantId: req.params.data },{orderStatus:"Preparing"}]}).exec((err, result) => {
+    order.find({$and:[{ restaurantId: req.params.data },{orderStatus:"Preparing"}]}).sort({$natural:-1}).exec((err, result) => {
         if (err) {
             next();
         } else if (result == null) {
@@ -61,7 +61,7 @@ router.get('/preparing/(:data)', function (req, res, next) {
     })
 })
 router.get('/ready/(:data)', function (req, res, next) {
-    order.find({$and:[{ restaurantId: req.params.data },{orderStatus:"Ready"}]}).exec((err, result) => {
+    order.find({$and:[{ restaurantId: req.params.data },{orderStatus:"Ready"}]}).sort({$natural:-1}).exec((err, result) => {
         if (err) {
             next();
         } else if (result == null) {
@@ -72,7 +72,7 @@ router.get('/ready/(:data)', function (req, res, next) {
     })
 })
 router.get('/cancelled/(:data)', function (req, res, next) {
-    order.find({$and:[{ restaurantId: req.params.data },{orderStatus:"Cancelled"}]}).exec((err, result) => {
+    order.find({$and:[{ restaurantId: req.params.data },{orderStatus:"Cancelled"}]}).sort({$natural:-1}).exec((err, result) => {
         if (err) {
             next();
         } else if (result == null) {
@@ -112,7 +112,7 @@ router.post('/statusChange',
     })
 
 router.get('/pastOrders/user/(:data)', function (req, res, next) {
-    order.find({ $and: [{ buyerId: req.params.data }, { $or: [{ orderStatus: "Delivered" }, { orderStatus: "Cancelled" }] }] }).exec((err, result) => {
+    order.find({ $and: [{ buyerId: req.params.data }, { $or: [{ orderStatus: "Delivered" }, { orderStatus: "Cancelled" }] }] }).sort({$natural:-1}).exec((err, result) => {
         if (err) {
             next();
         } else if (result == null) {
@@ -124,7 +124,7 @@ router.get('/pastOrders/user/(:data)', function (req, res, next) {
 
 })
 router.get('/upcomingOrders/user/(:data)', function (req, res, next) {
-    order.find({$and:[{ buyerId: req.params.data },{ $and: [{ orderStatus: { $ne: "Delivered" } }, { orderStatus: { $ne: "Cancelled" } }] }]}).exec((err, result) => {
+    order.find({$and:[{ buyerId: req.params.data },{ $and: [{ orderStatus: { $ne: "Delivered" } }, { orderStatus: { $ne: "Cancelled" } }] }]}).sort({$natural:-1}).exec((err, result) => {
         if (err) {
             next();
         } else if (result == null) {

@@ -4,8 +4,20 @@ import { Redirect } from 'react-router';
 import axios from 'axios';
 import { address } from '../../../constant';
 import '../../../App.css';
+import {SortableContainer, SortableElement} from 'react-sortable-hoc';
+import arrayMove from 'array-move';
 
+const SortableItem = SortableElement(({value}) => <li style={{listStyleType:"none"}}>{value}</li>)
 
+const SortableList = SortableContainer(({items}) => {
+  return (
+    <ul>
+      {items.map((value, index) => (
+        <SortableItem key={`item-${value}`} index={index} value={value} />
+      ))}
+    </ul>
+  );
+});
 class UpcomingOrder extends Component {
     constructor(props) {
         super(props);
@@ -19,12 +31,17 @@ class UpcomingOrder extends Component {
             orderDetails: [],
             authFlag: true,
             messageFlag:false,
-            messageBox:""
+            messageBox:"",
+            items: []
 
         }
         this.messageBoxChangeHandler = this.messageBoxChangeHandler.bind(this);
-
     }
+    onSortEnd = ({oldIndex, newIndex}) => {
+            this.setState(({items}) => ({
+          items: arrayMove(items, oldIndex, newIndex),
+        }));
+      };
     componentDidMount() {
         axios.get(address + '/order/upcomingOrders/user/' + sessionStorage.getItem("BuyerId"), {
             headers: { Authorization: 'JWT ' + cookie.get("token") }
@@ -32,6 +49,38 @@ class UpcomingOrder extends Component {
             .then(response => {
                 if (response.status === 200) {
                     this.setState({ orders: response.data })
+                    var array=[];
+                    this.state.orders.map((order) => {
+                        if (order.orderStatus != "Delivered" && order.orderStatus != "Cancelled") {
+                            var val = JSON.parse(order.orderDetails);
+                            var array2 = []
+            
+                            val.map((item) => {
+                                array2.push(<div class="row" style={{ marginLeft: '0px' }}>
+                                    <div class="col-md-4">{item.itemName} X {item.itemCount}</div>
+                                    <div class="col-md-4"></div>
+                                    <div class="col-md-4"></div>
+                                </div>)
+                            })
+                            array.push(<div class="row embossed-heavy" style={{ marginLeft: '100px', marginRight: '140px', marginBottom: '10px', paddingBottom: '10px', fontWeight: 'bold', backgroundColor: 'white' }}>
+                            <div class="row" style={{ backgroundColor: '#f2f2f2', marginLeft: '0px', marginRight: '0px' }}>
+                                <div class="col-md-2" style={{ paddingRight: '0px' }}><h5>Order Date :</h5></div>
+                                <div class="col-md-2" style={{ paddingLeft: '0px' }}><h5>{order.orderDate}</h5></div>
+                                <div class="col-md-5"></div>
+                                <div class="col-md-3">
+                                    <button class="btn " id={order._id} style={{ backgroundColor: 'Green', color: 'white', fontSize: '16px', marginTop: '0px', marginTop: '10px' }} onClick={this.sendMessage}> Send A Message</button>
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-md-8"><p style={{ fontSize: '20px', marginLeft: '10px', marginTop: '10px' }}>{order.restaurantName}</p></div>
+                                <div class="col-md-1"><button class="btn " id={order._id} style={{ backgroundColor: 'blue', color: 'white', fontSize: '16px', marginTop: '15px' }} onClick={this.trackOrder}>Track Order</button></div>
+                                <div class="col-md-3"></div>
+                            </div>
+                            <div class="row" style={{ marginLeft: '5px' }}> {array2}</div>
+                        </div>)
+                        }
+                    })
+                    this.setState({items:array})
                 }
             }).catch(error => {
                 sessionStorage.clear();
@@ -111,6 +160,7 @@ class UpcomingOrder extends Component {
         document.getElementById("TrackOrder").style.display = "None"
     }
     render() {
+      
         var messageDisplay = ""
         if (this.state.messageFlag == true) {
           messageDisplay = (<ul class="li alert alert-danger">Message body is needed</ul>);
@@ -125,7 +175,7 @@ class UpcomingOrder extends Component {
         } else {
             array.push(<div class="NoOrder"></div>)
         }
-        this.state.orders.map((order) => {
+        /*this.state.orders.map((order) => {
             if (order.orderStatus != "Delivered" && order.orderStatus != "Cancelled") {
                 var val = JSON.parse(order.orderDetails);
                 var array2 = []
@@ -137,27 +187,26 @@ class UpcomingOrder extends Component {
                         <div class="col-md-4"></div>
                     </div>)
                 })
-
                 array.push(<div class="row embossed-heavy" style={{ marginLeft: '100px', marginRight: '140px', marginBottom: '10px', paddingBottom: '10px', fontWeight: 'bold', backgroundColor: 'white' }}>
-                    <div class="row" style={{ backgroundColor: '#f2f2f2', marginLeft: '0px', marginRight: '0px' }}>
-                        <div class="col-md-2" style={{ paddingRight: '0px' }}><h5>Order Date :</h5></div>
-                        <div class="col-md-2" style={{ paddingLeft: '0px' }}><h5>{order.orderDate}</h5></div>
-                        <div class="col-md-5"></div>
-                        <div class="col-md-3">
-                            <button class="btn " id={order._id} style={{ backgroundColor: 'Green', color: 'white', fontSize: '16px', marginTop: '0px', marginTop: '10px' }} onClick={this.sendMessage}> Send A Message</button>
-                        </div>
+                <div class="row" style={{ backgroundColor: '#f2f2f2', marginLeft: '0px', marginRight: '0px' }}>
+                    <div class="col-md-2" style={{ paddingRight: '0px' }}><h5>Order Date :</h5></div>
+                    <div class="col-md-2" style={{ paddingLeft: '0px' }}><h5>{order.orderDate}</h5></div>
+                    <div class="col-md-5"></div>
+                    <div class="col-md-3">
+                        <button class="btn " id={order._id} style={{ backgroundColor: 'Green', color: 'white', fontSize: '16px', marginTop: '0px', marginTop: '10px' }} onClick={this.sendMessage}> Send A Message</button>
                     </div>
-                    <div class="row">
-                        <div class="col-md-8"><p style={{ fontSize: '20px', marginLeft: '10px', marginTop: '10px' }}>{order.restaurantName}</p></div>
-                        <div class="col-md-1"><button class="btn " id={order._id} style={{ backgroundColor: 'blue', color: 'white', fontSize: '16px', marginTop: '15px' }} onClick={this.trackOrder}>Track Order</button></div>
-                        <div class="col-md-3"></div>
-                    </div>
-                    <div class="row" style={{ marginLeft: '5px' }}> {array2}</div>
-                </div>)
+                </div>
+                <div class="row">
+                    <div class="col-md-8"><p style={{ fontSize: '20px', marginLeft: '10px', marginTop: '10px' }}>{order.restaurantName}</p></div>
+                    <div class="col-md-1"><button class="btn " id={order._id} style={{ backgroundColor: 'blue', color: 'white', fontSize: '16px', marginTop: '15px' }} onClick={this.trackOrder}>Track Order</button></div>
+                    <div class="col-md-3"></div>
+                </div>
+                <div class="row" style={{ marginLeft: '5px' }}> {array2}</div>
+            </div>)
             }
 
 
-        })
+        })*/
         var items = []
         var sum = parseFloat(0);
         this.state.orderDetails.map((item) => {
@@ -212,10 +261,18 @@ class UpcomingOrder extends Component {
             <div>
                 {redirectVar}
                 <p style={{ color: 'blue', fontWeight: '900', fontSize: '25px', marginLeft: '100px', marginTop: '50px' }}>Upcoming Orders</p>
-                <ul class="list-group" style={{ marginLeft: '150px', marginRight: '450px', marginTop: '50px' }}>
+               <div class="row" style={{paddingTop:'50px'}}>
+                    <div class="col-md-1"></div>
+                    <div class="col-md-7"><SortableList items={this.state.items} onSortEnd={this.onSortEnd} /></div>
+                    <div class="col-md-4"></div>
+
+               </div>
+                 
+
+             {/* <ul class="list-group" style={{ marginLeft: '150px', marginRight: '450px', marginTop: '50px' }}>
                     {array}
 
-                </ul>
+                </ul>  */}
                 <div class="modal" id="TrackOrder" >
                     <div class="modal-dialog" style={{ width: '850px', height: '1850px' }}>
                         <div class="modal-content">

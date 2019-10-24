@@ -31,14 +31,28 @@ class DetailsPage extends Component {
             bag: localStorage.getItem(sessionStorage.getItem("username")) ? JSON.parse(localStorage.getItem(sessionStorage.getItem("username"))) : [],
             itemsPresent: [],
             checkoutFlag: false,
-            authFlag: true
+            authFlag: true,
+            currentPage: 1,
+            itemsPerPage: 4
         }
         this.addItemModal = this.addItemModal.bind(this);
         this.incrementCount = this.incrementCount.bind(this);
         this.decrementCount = this.decrementCount.bind(this);
         this.addToBag = this.addToBag.bind(this);
         this.itemSearchedChangeHandler = this.itemSearchedChangeHandler.bind(this);
+        this.handleClick = this.handleClick.bind(this);
 
+    }
+    handleClick = (event) => {
+        this.setState({
+            currentPage: Number(event.target.id)
+        })
+        console.log(this.state.itemsPresent.length)
+        for (var i = 1; i <= Math.ceil(this.state.itemsPresent.length / this.state.itemsPerPage); i++) {
+            document.getElementById(i).className = "page-item";
+
+        }
+        document.getElementById(event.target.id).className = "page-item active";
     }
     CheckOut = () => {
         this.setState({ checkoutFlag: true })
@@ -178,23 +192,33 @@ class DetailsPage extends Component {
     }
     promiseGetItems = () => {
         return new Promise((resolve, reject) => {
-            axios.get(address + '/item/' + this.state.restaurantId, {
-                headers: { Authorization: 'JWT ' + cookie.get("token") }
-            })
-                .then(response => {
-                    if (response.status === 200) {
-                        this.setState({
-                            itemsPresent: response.data
-                        })
-                        resolve();
-                    }
-                }).catch(error => {
-                    sessionStorage.clear();
-                    localStorage.clear();
-                    cookie.remove("token");
-                    this.setState({ authFlag: false })
+            var responseArray = []
+            return new Promise((resolve, reject) => {
+                axios.get(address + '/item/' + this.state.restaurantId, {
+                    headers: { Authorization: 'JWT ' + cookie.get("token") }
                 })
+                    .then(response => {
+                        if (response.status === 200) {
+                            this.state.sectionsPresent.forEach((section) => {
+                                response.data.forEach((item) => {
+                                    if (section._id == item.sectionId) {
+                                        responseArray.push(item)
+                                    }
+                                })
+                            })
+                            this.setState({
+                                itemsPresent: responseArray
+                            })
+                            resolve();
+                        }
+                    }).catch(error => {
+                        sessionStorage.clear();
+                        localStorage.clear();
+                        cookie.remove("token");
+                        this.setState({ authFlag: false })
+                    })
 
+            })
         })
     }
 
@@ -236,8 +260,10 @@ class DetailsPage extends Component {
     }
     componentDidMount() {
 
-        this.promiseGetSections();
-        this.promiseGetItems();
+        this.promiseGetSections().then(() => {
+            this.promiseGetItems();
+
+        })
 
     }
     render() {
@@ -246,10 +272,10 @@ class DetailsPage extends Component {
         var bagButtonDisplay = "";
         var array = [];
         var subTotal = parseFloat(0);
-        var mitra="";
-        if(this.state.itemImage){
-           mitra=( <div>
-            <img style={{ width: "70%", paddingBottom: "10px", paddingTop: "10px" }} src={this.state.itemImage} class="rounded" /></div>)
+        var itemImage = "";
+        if (this.state.itemImage) {
+            itemImage = (<div>
+                <img style={{ width: "70%", paddingBottom: "10px", paddingTop: "10px" }} src={this.state.itemImage} class="rounded" /></div>)
         }
         if (this.state.bag.length) {
             array.push(<div class="row"><div class="col-md-12" style={{ textAlign: 'center', fontSize: '25px', marginBottom: '20px' }}>{this.state.restaurantName}</div> </div>)
@@ -300,13 +326,42 @@ class DetailsPage extends Component {
         if (this.state.messageFlag == true) {
             messageDisplay = (<ul class="li alert alert-success">Added this to your bag !!!</ul>);
         }
+        let renderPageNumbers = [];
+        const { itemsPresent, currentPage, itemsPerPage } = this.state;
+        const indexOfLastTodo = currentPage * itemsPerPage;
+        const indexOfFirstTodo = indexOfLastTodo - itemsPerPage;
+        const currentPageitems = itemsPresent.slice(indexOfFirstTodo, indexOfLastTodo);
+        const pageNumbers = [];
+        for (let i = 1; i <= Math.ceil(itemsPresent.length / itemsPerPage); i++) {
+            pageNumbers.push(i);
+        }
+        pageNumbers.map(number => {
+            if (number == 1) {
+                renderPageNumbers.push(
+                    <li class="page-item active" id={number}><a class="page-link" id={number} key={number} onClick={this.handleClick} style={{ color: 'black' }}> {number}</a></li>
+                )
+            } else {
+                renderPageNumbers.push(
+                    <li class="page-item" id={number}><a class="page-link" id={number} key={number} onClick={this.handleClick} style={{ color: 'black' }}> {number}</a></li>
+                )
+            }
+
+
+        });
         var array = [];
         if (this.state.sectionsPresent.length) {
-            array.push(<div class="row" style={{ fontSize: "30px", fontWeight: "900" }}>
-                <div class="col-md-4"></div>
-                <div class="col-md-6"> {this.state.restaurantName}</div>
-                <div class="col-md-2"></div>
-
+            array.push(<div><div class="row" style={{ fontSize: "30px", fontWeight: "900" }}>
+                <div class="col-md-7"></div>
+                <div class="col-md-5"> {this.state.restaurantName}</div>
+            </div>
+                <div class="row">
+                    <div class="col-md-4"></div>
+                    <div class="col-md-4">
+                        <ul id="page-numbers" class="pagination pagination-lg" style={{ marginBottom: '10px' }}>
+                            {renderPageNumbers}
+                        </ul>
+                    </div>
+                </div>
             </div>)
             this.state.sectionsPresent.map((section) => {
                 var flag = 0;
@@ -317,7 +372,7 @@ class DetailsPage extends Component {
                     <br></br>
                 </div>)
 
-                this.state.itemsPresent.filter((item) => {
+                currentPageitems.filter((item) => {
                     if (item.sectionId == section._id) {
                         flag = 1;
                         array.push(
@@ -393,25 +448,25 @@ class DetailsPage extends Component {
                                 </div>
                             </div>
                             <div class="modal-body">
-                            <div class="row">
-                                <div class="col-md-6"><div class="row" style={{ paddingLeft: "25px", paddingRight: "25px" }}>
-                                    <div class="row" style={{ paddingBottom: "5px" }}>
-                                        Description
-                                </div>
-                                    <div class="row" style={{ paddingBottom: "15px" }}>
-                                        <p>{this.state.itemDesc}</p>
-                                    </div>
-                                </div>
-                                    <div class="row" style={{ paddingLeft: "25px", paddingRight: "25px" }}>
+                                <div class="row">
+                                    <div class="col-md-6"><div class="row" style={{ paddingLeft: "25px", paddingRight: "25px" }}>
                                         <div class="row" style={{ paddingBottom: "5px" }}>
-                                            Item Price
+                                            Description
                                 </div>
                                         <div class="row" style={{ paddingBottom: "15px" }}>
-                                            ${this.state.itemPrice}
+                                            <p>{this.state.itemDesc}</p>
                                         </div>
                                     </div>
+                                        <div class="row" style={{ paddingLeft: "25px", paddingRight: "25px" }}>
+                                            <div class="row" style={{ paddingBottom: "5px" }}>
+                                                Item Price
                                 </div>
-                                <div class="col-md-6"> {mitra}</div>
+                                            <div class="row" style={{ paddingBottom: "15px" }}>
+                                                ${this.state.itemPrice}
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6"> {itemImage}</div>
                                 </div>
                                 <div class="row" style={{ paddingLeft: "25px", paddingRight: "25px" }}>
                                     <div class="row" style={{ paddingBottom: "5px" }}>
@@ -436,6 +491,7 @@ class DetailsPage extends Component {
                                     </div>
                                     <div class="col-md-7"></div>
                                 </div>
+
                                 <div class="row">
                                     <div class="row" style={{ paddingLeft: "25px", paddingRight: "25px", paddingTop: "25px" }}>
                                         {messageDisplay}

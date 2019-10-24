@@ -33,8 +33,9 @@ router.post('/',
 
         }
     })
+    //.sort({menuSectionName:1})
 router.get('/(:data)', function (req, res, next) {
-    section.find({ restaurantId: req.params.data }).sort({menuSectionName:1}).exec((err, result) => {
+    section.find({ restaurantId: req.params.data }).exec((err, result) => {
         if (err) {
             next();
         } else {

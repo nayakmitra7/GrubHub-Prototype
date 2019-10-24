@@ -105,7 +105,7 @@ class Message extends Component {
 
             <div>
                 {redirectVar}
-                <p style={{ color: 'crimson', fontWeight: '900', fontSize: '40px', marginLeft: '600px', marginTop: '0px' }}>{sessionStorage.getItem("RestaurantName")}</p>
+                <p style={{ color: 'crimson', fontWeight: '900', fontSize: '40px', marginLeft: '600px', marginTop: '0px' }}>Messages</p>
                 <p style={{ color: 'blue', fontWeight: '900', fontSize: '25px', marginLeft: '40px', marginTop: '0px' }}>{this.state.titleName}</p>
                 <ul class="nav nav-tabs" style={{ fontSize: '18px', marginLeft: '55px' }}>
                     <li class={this.state.received}><a onClick={this.receivedMessages}><p>Received</p> </a></li>
