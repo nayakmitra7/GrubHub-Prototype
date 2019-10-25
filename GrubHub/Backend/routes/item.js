@@ -105,8 +105,6 @@ router.delete('/(:data)', function (req, res, next) {
 })
 router.post('/image', upload2.single('myImage'), function (req, res, next) {
     var data = { itemImage: "uploads/itemImage" + req.file.originalname + ".jpeg" }
-    console.log(data)
-
     item.findOneAndUpdate({ _id: req.file.originalname }, data).exec((err, user) => {
         if (err) {
             next();

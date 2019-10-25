@@ -47,7 +47,6 @@ class DetailsPage extends Component {
         this.setState({
             currentPage: Number(event.target.id)
         })
-        console.log(this.state.itemsPresent.length)
         for (var i = 1; i <= Math.ceil(this.state.itemsPresent.length / this.state.itemsPerPage); i++) {
             document.getElementById(i).className = "page-item";
 

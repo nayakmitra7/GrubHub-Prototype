@@ -26,7 +26,6 @@ class MessageOwner extends Component {
             .then(response => {
                 if (response.status === 200) {
                     this.setState({ messageListReceived: response.data })
-                    console.log(response.data)
                 }
             }).catch(error => {
                 sessionStorage.clear();
@@ -41,9 +40,7 @@ class MessageOwner extends Component {
         axios.get(address + '/message/sent/' + sessionStorage.getItem("RestaurantID"), { headers: { Authorization: 'JWT ' + cookie.get("token") } })
             .then(response => {
                 if (response.status === 200) {
-                    console.log("sent")
                     this.setState({ messageListSent: response.data })
-                    console.log(response.data)
                 }
 
             }).catch(error => {

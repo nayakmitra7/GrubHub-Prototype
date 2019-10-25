@@ -33,7 +33,6 @@ class SearchPage extends Component {
             currentPage: Number(event.target.id), filterFlag: false
         })
         for (var i = 1; i <= Math.ceil(this.state.restaurantsServingItem.length / this.state.restaurantsPerPage); i++) {
-            console.log(i)
             document.getElementById(i).className = "page-item";
 
         }
@@ -209,7 +208,7 @@ class SearchPage extends Component {
                     </div>
                 </div>
                 <div class="row">
-                    <div class="col-md-4" style={{ paddingTop: '30px', fontSize: '24px', paddingBottom: '30px', paddingLeft: '30px' }}>The Restaurants serving {this.state.itemToPrint} are:</div>
+                    <div class="col-md-4" style={{ paddingTop: '30px', fontSize: '24px', paddingBottom: '0px', paddingLeft: '30px' }}>The Restaurants serving {this.state.itemToPrint} are:</div>
                     <div class="col-md-6"></div>
                     <div class="col-md-2" style={{ marginTop: '20px' }}>
                         <div class="dropdown">
@@ -224,6 +223,14 @@ class SearchPage extends Component {
                     </div>
                 </div>
                 <div class="row">
+                    <div class="col-md-4"></div>
+                    <div class="col-md-4">
+                        <ul id="page-numbers" class="pagination" style={{marginBottom:'10px'}}>
+                            {renderPageNumbers}
+                        </ul>
+                    </div>
+                </div>
+                <div class="row">
                     <div class="col-md-2"></div>
                     <div class="col-md-6">
                         <ul>
@@ -232,14 +239,7 @@ class SearchPage extends Component {
                     </div>
                     <div class="col-md-4"></div>
                 </div>
-                <div class="row">
-                    <div class="col-md-4"></div>
-                    <div class="col-md-4">
-                        <ul id="page-numbers" class="pagination pagination-lg" style={{bottom:"0",position:"fixed",marginBottom:'200px'}}>
-                            {renderPageNumbers}
-                        </ul>
-                    </div>
-                </div>
+               
                 {messageDisplay}
 
             </div>

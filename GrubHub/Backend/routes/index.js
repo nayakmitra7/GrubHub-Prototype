@@ -16,7 +16,7 @@ const uri= 'mongodb+srv://root:root@cluster0-skd7n.mongodb.net/test?retryWrites=
 mongoose.connect(uri,{useNewUrlParser:true,useUnifiedTopology:true,poolSize:4});
 const connection=mongoose.connection;
 connection.once('open',()=>{
-    console.log('Mongo');
+    console.log('Mongo DB Connected successfully!');
 })
 app.use(passport.initialize());
 app.set('view engine', 'ejs');

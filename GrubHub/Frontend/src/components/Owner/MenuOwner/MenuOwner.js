@@ -34,7 +34,9 @@ class MenuOwner extends Component {
             itemForSection: [],
             itemsPresent: [],
             errorMessage: [],
-            authFlag:true
+            authFlag:true,
+            currentPage: 1,
+            itemsPerPage: 4
         }
         this.addItemChangeHandler = this.addItemChangeHandler.bind(this);
         this.addSectionChangeHandler = this.addSectionChangeHandler.bind(this);
@@ -48,7 +50,18 @@ class MenuOwner extends Component {
         this.fetchItemsforSection = this.fetchItemsforSection.bind(this);
         this.modalCloseSection = this.modalCloseSection.bind(this);
         this.pictureChangeHandler=this.pictureChangeHandler.bind(this)
+        this.handleClick = this.handleClick.bind(this);
 
+    }
+    handleClick = (event) => {
+        this.setState({
+            currentPage: Number(event.target.id)
+        })
+        for (var i = 1; i <= Math.ceil(this.state.itemsPresent.length / this.state.itemsPerPage); i++) {
+            document.getElementById(i).className = "page-item";
+
+        }
+        document.getElementById(event.target.id).className = "page-item active";
     }
     pictureChangeHandler =(event)=>{
         if(event.target.files[0]){
@@ -80,12 +93,19 @@ class MenuOwner extends Component {
     }
     promiseGetItems = () => {
         return new Promise((resolve, reject) => {
-
+            var responseArray=[]
             axios.get(address+'/item/' + this.state.restaurantId,{headers: {Authorization: 'JWT '+cookie.get("token")}})
                 .then(response => {
                     if (response.status === 200) {
+                        this.state.sectionsPresent.forEach((section) => {
+                            response.data.forEach((item) => {
+                                if (section._id == item.sectionId) {
+                                    responseArray.push(item)
+                                }
+                            })
+                        })
                         this.setState({
-                            itemsPresent: response.data
+                            itemsPresent: responseArray
                         })
                         resolve();
                     }
@@ -144,7 +164,10 @@ class MenuOwner extends Component {
 
     componentDidMount() {
         //this.promiseGetRestDetails().then(() => {
-            this.promiseGetSections();
+            this.promiseGetSections().then(()=>{
+                this.promiseGetItems();
+
+            })
             this.promiseGetItems();
         //})
     }
@@ -186,7 +209,10 @@ class MenuOwner extends Component {
                 this.setState({
                     errorFlag: "Success"
                 })
-                this.promiseGetItems();
+                this.promiseGetSections().then(()=>{
+                    this.promiseGetItems();
+
+                })
                 this.modalClose();
             } else {
                 this.setState({
@@ -366,9 +392,12 @@ class MenuOwner extends Component {
                 this.setState({
                     errorFlag: "Success"
                 })
-                this.promiseGetSections();
+                setTimeout(() => {
+                    this.modalCloseDeleteSection();
+                    window.location.reload();
+                },0);
 
-                this.modalCloseDeleteSection();
+                //this.modalCloseDeleteSection();
 
             } else {
                 this.setState({
@@ -410,6 +439,29 @@ class MenuOwner extends Component {
         let ItemHeading = "";
         var array = [];
         var buttonSection = "";
+        let renderPageNumbers = [];
+        const { itemsPresent, currentPage, itemsPerPage } = this.state;
+        const indexOfLastTodo = currentPage * itemsPerPage;
+        const indexOfFirstTodo = indexOfLastTodo - itemsPerPage;
+        const currentPageitems = itemsPresent.slice(indexOfFirstTodo, indexOfLastTodo);
+        const pageNumbers = [];
+        for (let i = 1; i <= Math.ceil(itemsPresent.length / itemsPerPage); i++) {
+            pageNumbers.push(i);
+        }
+        pageNumbers.map(number => {
+            if (number == 1) {
+                renderPageNumbers.push(
+                    <li class="page-item active" id={number}><a class="page-link" id={number} key={number} onClick={this.handleClick} style={{ color: 'black' }}> {number}</a></li>
+                )
+            } else {
+                renderPageNumbers.push(
+                    <li class="page-item" id={number}><a class="page-link" id={number} key={number} onClick={this.handleClick} style={{ color: 'black' }}> {number}</a></li>
+                )
+            }
+
+
+        });
+
         if (this.state.editSection == true) {
             buttonSection = (<div class="row">
                 <div class="col-md-4"><button type="button" onClick={this.deleteSectionHandler} class="btn btn-danger btn-md">Delete Section</button></div>
@@ -473,8 +525,9 @@ class MenuOwner extends Component {
                         <div class="col-md-11" style={{ alignItems: "right" }}>{section.menuSectionName} </div>
                     </div>
                     <br></br>
+                    
                 </div>)
-                this.state.itemsPresent.filter((item) => {
+                currentPageitems.filter((item) => {
 
                     if (item.sectionId == section._id) {
                         flag = 1;
@@ -498,9 +551,10 @@ class MenuOwner extends Component {
                     }
                 })
                 if (flag == 0) {
-                    array.push(<div class="row" style={{ marginBottom: '25px', paddingTop: '10px', paddingBottom: '10px', fontSize: "15px", fontWeight: "600", alignItems: "center" }}>
-                        <div class="col-md-4"></div><div class="col-md-4">No items here !!!</div><div class="col-md-4"></div>
-                    </div>)
+                    array.pop();
+                    // array.push(<div class="row" style={{ marginBottom: '25px', paddingTop: '10px', paddingBottom: '10px', fontSize: "15px", fontWeight: "600", alignItems: "center" }}>
+                    //     <div class="col-md-4"></div><div class="col-md-4">No items here !!!</div><div class="col-md-4"></div>
+                    // </div>)
                 }
             })
         } else {
@@ -542,7 +596,14 @@ class MenuOwner extends Component {
                 <div class="row">
                     <div class="col-md-12"> <p align="center" style={{ fontSize: '50px', color: 'crimson', paddingLeft: '20px', paddingRight: '20px', }}>{sessionStorage.getItem("RestaurantName")}</p></div>
                 </div>
-
+                <div class="row">
+                    <div class="col-md-4"></div>
+                    <div class="col-md-4">
+                        <ul id="page-numbers" class="pagination pagination-lg" style={{ marginBottom: '10px' }}>
+                            {renderPageNumbers}
+                        </ul>
+                    </div>
+                </div>
                 <div class="row">
                     <div class="col-md-4"></div>
                     <div class="col-md-4"></div>

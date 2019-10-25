@@ -84,7 +84,6 @@ router.get('/cancelled/(:data)', function (req, res, next) {
 })
 router.post('/cancel',
     function (req, res, next) {
-        console.log(req.body.id)
          order.findOneAndUpdate({_id:req.body.id},{orderStatus:"Cancelled"}).exec((err, result) => {
             if (err) {
                 next();
