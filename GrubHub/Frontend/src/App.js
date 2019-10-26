@@ -1,22 +1,37 @@
 import React, { Component } from 'react';
 import './App.css';
 import Main from './components/Main';
-import {BrowserRouter} from 'react-router-dom';
+import { Router } from 'react-router-dom';
+import { history } from './redux/helper/history';
+import { connect } from 'react-redux';
+import { alertActions } from './redux/actions/alert.actions';
 import Navabar from './components/LandingPage/Navbar';
 //App Component
 class App extends Component {
+  constructor(props) {
+    super(props);
+    history.listen((location, action) => {
+      // clear alert on location change
+      this.props.clearAlerts();
+    });
+
+  }
   render() {
     return (
       //Use Browser Router to route to different pages
-      <BrowserRouter>
+      <Router history={history}>
         <div>
           <Navabar></Navabar>
           {/* App Component Has a Child Component called Main*/}
-          <Main/>
+          <Main />
         </div>
-      </BrowserRouter>
+      </Router>
     );
   }
 }
+const actionCreators = {
+  clearAlerts: alertActions.clear
+};
 //Export the App component so that it can be used in index.js
-export default App;
+const connectedApp = connect(null, actionCreators)(App);
+export { connectedApp as App };

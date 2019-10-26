@@ -1,6 +1,6 @@
 import React, {Component} from 'react';
 import {Route} from 'react-router-dom';
-import Login from './Buyer/Login/Login';
+import {Login} from './Buyer/Login/Login';
 import signup from './Buyer/signup/signup';
 import UpdateDetails from './Buyer/UpdateDetails/UpdateDetails';
 import UpdateDetailsOwner from './Owner/UpdateDetailsOwner/UpdateDetailsOwner';
@@ -12,12 +12,12 @@ import HomePage from './Buyer/HomePage/HomePage'
 import SearchPage from './Buyer/SearchPage/SearchPage'
 import DetailsPage from './Buyer/DetailsPage/DetailsPage'
 import ReviewPage from './Buyer/ReviewPage/ReviewPage'
-import UpcomingOrder from './Buyer/UpcomingOrder/UpcomingOrder'
-import PastOrder from './Buyer/PastOrder/PastOrder'
+import {UpcomingOrder} from './Buyer/UpcomingOrder/UpcomingOrder'
+import {PastOrder} from './Buyer/PastOrder/PastOrder'
 import PastOrderOwner from './Owner/PastOrderOwner/PastOrderOwner'
 import SetUpOwner from './Owner/SetUpOwner/SetUpOwner'
 import MessageOwner from './Owner/MessageOwner/MessageOwner'
-import Message from './Buyer/Message/Message'
+import {Message} from './Buyer/Message/Message'
 
 class Main extends Component {
     render(){

@@ -1,9 +1,9 @@
 import React, { Component } from 'react';
 import cookie from 'js-cookie';
 import { Redirect } from 'react-router';
-import axios from 'axios';
-import {address} from '../../../constant'
 import '../../../App.css';
+import { userActions } from '../../../redux/actions/user.actions';
+import { connect } from 'react-redux';
 
 class PastOrder extends Component {
     constructor(props) {
@@ -21,18 +21,11 @@ class PastOrder extends Component {
 
     }
     componentDidMount() {
-        axios.get(address+'/order/pastOrders/user/'+sessionStorage.getItem("BuyerId") ,{   
-            headers: {Authorization: 'JWT '+cookie.get("token")}
-        }).then(response => {
-                if (response.status === 200) {
-                    this.setState({ orders: response.data })
-                }
-            }).catch(error => {
-                sessionStorage.clear();
-                localStorage.clear();
-                cookie.remove("token");
-                this.setState({ authFlag: false })
-            });
+        this.props.fetchPastOrder();
+    }
+    componentWillReceiveProps(newProp){
+        var order=newProp.users.order;
+        this.setState({orders:order})
     }
     trackOrder = (e) => {
         document.getElementById("TrackOrder").style.display = "block"
@@ -55,11 +48,10 @@ class PastOrder extends Component {
         document.getElementById("TrackOrder").style.display = "None"
     }
     render() {
-
         var redirectVar = "";
-        if (!this.state.authFlag) {
+     if (!cookie.get("token")) {
             redirectVar = <Redirect to="/login" />
-        }
+        }else{
         var array = [];
         if (this.state.orders.length) {
             this.state.orders.map((order) => {
@@ -126,7 +118,7 @@ class PastOrder extends Component {
 
                 break;
         }
-
+    }
         return (
 
             <div>
@@ -179,5 +171,14 @@ class PastOrder extends Component {
         )
     }
 }
+function mapState(state) {
+    const { users, alert } = state;
+    return { users, alert };
+}
+const actionCreators = {
+    fetchPastOrder: userActions.fetchPastOrder,
+};
 
-export default PastOrder;
+const connectedPastOrderPage = connect(mapState, actionCreators)(PastOrder);
+//export Login Component
+export { connectedPastOrderPage as PastOrder };

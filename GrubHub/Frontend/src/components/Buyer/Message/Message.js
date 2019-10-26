@@ -1,9 +1,9 @@
 import React, { Component } from 'react';
 import cookie from 'js-cookie';
 import { Redirect } from 'react-router';
-import axios from 'axios';
-import { address } from '../../../constant'
 import '../../../App.css';
+import { userActions } from '../../../redux/actions/user.actions';
+import { connect } from 'react-redux';
 
 class Message extends Component {
     constructor(props) {
@@ -21,58 +21,30 @@ class Message extends Component {
     componentDidMount() {
         this.receivedMessages();
     }
+    componentWillReceiveProps(newProps){
+        var messageSentArray=newProps.users.message;
+        this.setState({messageListSent:messageSentArray})
+        var messageReceivedArray=newProps.users.message;
+        this.setState({messageListReceived:messageReceivedArray})
+    }
     receivedMessages = (e) => {
-        axios.get(address + '/message/received/' + sessionStorage.getItem("BuyerId"), { headers: { Authorization: 'JWT ' + cookie.get("token") } })
-            .then(response => {
-                if (response.status === 200) {
-                    this.setState({ messageListReceived: response.data })
-                }
-            }).catch(error => {
-                sessionStorage.clear();
-                localStorage.clear();
-                cookie.remove("token");
-                this.setState({ authFlag: false })
-            });
+        
+        this.props.fetchMessageReceived();
         this.setState({ sent: "", received: "active",messageListSent:"" })
 
     }
     sentMessages = (e) => {
-        axios.get(address + '/message/sent/' + sessionStorage.getItem("BuyerId"), { headers: { Authorization: 'JWT ' + cookie.get("token") } })
-            .then(response => {
-                if (response.status === 200) {
-                    this.setState({ messageListSent: response.data })
-                }
-
-            }).catch(error => {
-                sessionStorage.clear();
-                localStorage.clear();
-                cookie.remove("token");
-                this.setState({ authFlag: false })
-            });
+        this.props.fetchMessageSent();
         this.setState({ received: "", sent: "active",messageListReceived:"" })
     }
     render() {
 
         var redirectVar = "";
         var array = [];
-        if (this.state.messageListSent.length) {
-            this.state.messageListSent.map((message) => {
-                array.push(<div class="row embossed-heavy" style={{ marginLeft: '100px', marginRight: '140px', marginBottom: '10px', paddingBottom: '10px', fontWeight: 'bold', backgroundColor: 'white' }}>
-                    <div class="row" style={{ backgroundColor: '#f2f2f2', marginLeft: '0px', marginRight: '0px' }}>
-                        <div class="col-md-1" style={{ paddingRight: '0px' }}><h4>To:</h4></div>
-                        <div class="col-md-3" style={{ paddingLeft: '0px' }}><h4>{message.receiverFirstName} {message.receiverLastName}</h4></div>
-                        <div class="col-md-2" style={{ paddingLeft: '0px' }}></div>
-                        <div class="col-md-3" style={{ paddingRight: '0px' }}><h4>Related Order Date:</h4></div>
-                        <div class="col-md-3" style={{ paddingLeft: '0px' }}><h4>{message.orderDate}</h4></div>
-                        
-                    </div>
-                    <div class="row" style={{ marginLeft: '5px',width:'200%' }}><h4>Message was sent on :  {message.messageDate}</h4></div>
-                    <div class="row" style={{ marginLeft: '5px',width:'200%' }}>
-                        {message.messageBody}
-                    </div>
-                </div>)
-            })
-        }else if (this.state.messageListReceived.length) {
+        if (!cookie.get("token")) {
+            redirectVar = <Redirect to="/login" />
+        }else{
+        if (this.state.messageListReceived.length) {
             this.state.messageListReceived.map((message) => {
                 array.push(<div class="row embossed-heavy" style={{ marginLeft: '100px', marginRight: '140px', marginBottom: '10px', paddingBottom: '10px', fontWeight: 'bold', backgroundColor: 'white' }}>
                     <div class="row" style={{ backgroundColor: '#f2f2f2', marginLeft: '0px', marginRight: '0px' }}>
@@ -92,11 +64,28 @@ class Message extends Component {
 
 
             })
-        } 
-
-        if (!this.state.authFlag) {
-            redirectVar = <Redirect to="/LoginOwner" />
+        } else  if (this.state.messageListSent.length) {
+            this.state.messageListSent.map((message) => {
+                array.push(<div class="row embossed-heavy" style={{ marginLeft: '100px', marginRight: '140px', marginBottom: '10px', paddingBottom: '10px', fontWeight: 'bold', backgroundColor: 'white' }}>
+                    <div class="row" style={{ backgroundColor: '#f2f2f2', marginLeft: '0px', marginRight: '0px' }}>
+                        <div class="col-md-1" style={{ paddingRight: '0px' }}><h4>To:</h4></div>
+                        <div class="col-md-3" style={{ paddingLeft: '0px' }}><h4>{message.receiverFirstName} {message.receiverLastName}</h4></div>
+                        <div class="col-md-2" style={{ paddingLeft: '0px' }}></div>
+                        <div class="col-md-3" style={{ paddingRight: '0px' }}><h4>Related Order Date:</h4></div>
+                        <div class="col-md-3" style={{ paddingLeft: '0px' }}><h4>{message.orderDate}</h4></div>
+                        
+                    </div>
+                    <div class="row" style={{ marginLeft: '5px',width:'200%' }}><h4>Message was sent on :  {message.messageDate}</h4></div>
+                    <div class="row" style={{ marginLeft: '5px',width:'200%' }}>
+                        {message.messageBody}
+                    </div>
+                </div>)
+            })
         }
+    
+    }
+
+       
 
         return (
 
@@ -119,5 +108,14 @@ class Message extends Component {
         )
     }
 }
+function mapState(state) {
+    const { users, alert } = state;
+    return { users, alert };
+}
+const actionCreators = {
+    fetchMessageSent: userActions.fetchMessageSent,
+    fetchMessageReceived:userActions.fetchMessageReceived
+};
 
-export default Message;
+const connectedMessagePage = connect(mapState, actionCreators)(Message);
+export { connectedMessagePage as Message };

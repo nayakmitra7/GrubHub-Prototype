@@ -273,7 +273,10 @@ input[type='file'] {
   color: transparent;
 }
 
-
+.alert-danger{
+  margin-bottom: 0px;
+  font-weight: bolder
+}
  
   
   

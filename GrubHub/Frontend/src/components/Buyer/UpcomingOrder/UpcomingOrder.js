@@ -1,22 +1,23 @@
 import React, { Component } from 'react';
 import cookie from 'js-cookie';
 import { Redirect } from 'react-router';
-import axios from 'axios';
-import { address } from '../../../constant';
 import '../../../App.css';
-import {SortableContainer, SortableElement} from 'react-sortable-hoc';
+import { SortableContainer, SortableElement } from 'react-sortable-hoc';
 import arrayMove from 'array-move';
+import { userActions } from '../../../redux/actions/user.actions';
+import { connect } from 'react-redux';
 
-const SortableItem = SortableElement(({value}) => <li style={{listStyleType:"none"}}>{value}</li>)
 
-const SortableList = SortableContainer(({items}) => {
-  return (
-    <ul>
-      {items.map((value, index) => (
-        <SortableItem key={`item-${value}`} index={index} value={value} />
-      ))}
-    </ul>
-  );
+const SortableItem = SortableElement(({ value }) => <li style={{ listStyleType: "none" }}>{value}</li>)
+
+const SortableList = SortableContainer(({ items }) => {
+    return (
+        <ul>
+            {items.map((value, index) => (
+                <SortableItem key={`item-${value}`} index={index} value={value} />
+            ))}
+        </ul>
+    );
 });
 class UpcomingOrder extends Component {
     constructor(props) {
@@ -30,69 +31,61 @@ class UpcomingOrder extends Component {
             orderDate: "",
             orderDetails: [],
             authFlag: true,
-            messageFlag:false,
-            messageBox:"",
+            messageFlag: false,
+            messageBox: "",
             items: []
 
         }
         this.messageBoxChangeHandler = this.messageBoxChangeHandler.bind(this);
     }
-    onSortEnd = ({oldIndex, newIndex}) => {
-            this.setState(({items}) => ({
-          items: arrayMove(items, oldIndex, newIndex),
+    onSortEnd = ({ oldIndex, newIndex }) => {
+        this.setState(({ items }) => ({
+            items: arrayMove(items, oldIndex, newIndex),
         }));
-      };
+    };
     componentDidMount() {
-        axios.get(address + '/order/upcomingOrders/user/' + sessionStorage.getItem("BuyerId"), {
-            headers: { Authorization: 'JWT ' + cookie.get("token") }
+        this.props.fetchUpcomingOrder();
+    }
+    componentWillReceiveProps(newProps) {
+        var orderArray = newProps.users.order;
+        this.setState({ orders: orderArray });
+        var array = [];
+        orderArray.map((order) => {
+            if (order.orderStatus != "Delivered" && order.orderStatus != "Cancelled") {
+                var val = JSON.parse(order.orderDetails);
+                var array2 = []
+
+                val.map((item) => {
+                    array2.push(<div class="row" style={{ marginLeft: '0px' }}>
+                        <div class="col-md-4">{item.itemName} X {item.itemCount}</div>
+                        <div class="col-md-4"></div>
+                        <div class="col-md-4"></div>
+                    </div>)
+                })
+                array.push(<div class="row embossed-heavy" style={{ marginLeft: '100px', marginRight: '140px', marginBottom: '10px', paddingBottom: '10px', fontWeight: 'bold', backgroundColor: 'white' }}>
+                    <div class="row" style={{ backgroundColor: '#f2f2f2', marginLeft: '0px', marginRight: '0px' }}>
+                        <div class="col-md-2" style={{ paddingRight: '0px' }}><h5>Order Date :</h5></div>
+                        <div class="col-md-2" style={{ paddingLeft: '0px' }}><h5>{order.orderDate}</h5></div>
+                        <div class="col-md-5"></div>
+                        <div class="col-md-3">
+                            <button class="btn " id={order._id} style={{ backgroundColor: 'Green', color: 'white', fontSize: '16px', marginTop: '0px', marginTop: '10px' }} onClick={this.sendMessage}> Send A Message</button>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-8"><p style={{ fontSize: '20px', marginLeft: '10px', marginTop: '10px' }}>{order.restaurantName}</p></div>
+                        <div class="col-md-1"><button class="btn " id={order._id} style={{ backgroundColor: 'blue', color: 'white', fontSize: '16px', marginTop: '15px' }} onClick={this.trackOrder}>Track Order</button></div>
+                        <div class="col-md-3"></div>
+                    </div>
+                    <div class="row" style={{ marginLeft: '5px' }}> {array2}</div>
+                </div>)
+            }
         })
-            .then(response => {
-                if (response.status === 200) {
-                    this.setState({ orders: response.data })
-                    var array=[];
-                    this.state.orders.map((order) => {
-                        if (order.orderStatus != "Delivered" && order.orderStatus != "Cancelled") {
-                            var val = JSON.parse(order.orderDetails);
-                            var array2 = []
-            
-                            val.map((item) => {
-                                array2.push(<div class="row" style={{ marginLeft: '0px' }}>
-                                    <div class="col-md-4">{item.itemName} X {item.itemCount}</div>
-                                    <div class="col-md-4"></div>
-                                    <div class="col-md-4"></div>
-                                </div>)
-                            })
-                            array.push(<div class="row embossed-heavy" style={{ marginLeft: '100px', marginRight: '140px', marginBottom: '10px', paddingBottom: '10px', fontWeight: 'bold', backgroundColor: 'white' }}>
-                            <div class="row" style={{ backgroundColor: '#f2f2f2', marginLeft: '0px', marginRight: '0px' }}>
-                                <div class="col-md-2" style={{ paddingRight: '0px' }}><h5>Order Date :</h5></div>
-                                <div class="col-md-2" style={{ paddingLeft: '0px' }}><h5>{order.orderDate}</h5></div>
-                                <div class="col-md-5"></div>
-                                <div class="col-md-3">
-                                    <button class="btn " id={order._id} style={{ backgroundColor: 'Green', color: 'white', fontSize: '16px', marginTop: '0px', marginTop: '10px' }} onClick={this.sendMessage}> Send A Message</button>
-                                </div>
-                            </div>
-                            <div class="row">
-                                <div class="col-md-8"><p style={{ fontSize: '20px', marginLeft: '10px', marginTop: '10px' }}>{order.restaurantName}</p></div>
-                                <div class="col-md-1"><button class="btn " id={order._id} style={{ backgroundColor: 'blue', color: 'white', fontSize: '16px', marginTop: '15px' }} onClick={this.trackOrder}>Track Order</button></div>
-                                <div class="col-md-3"></div>
-                            </div>
-                            <div class="row" style={{ marginLeft: '5px' }}> {array2}</div>
-                        </div>)
-                        }
-                    })
-                    this.setState({items:array})
-                }
-            }).catch(error => {
-                sessionStorage.clear();
-                localStorage.clear();
-                cookie.remove("token");
-                this.setState({ authFlag: false })
-            })
+        this.setState({ items: array })
     }
     modalCloseMessage = () => {
         this.setState({ messageFlag: false, messageBox: "" })
         document.getElementById("Message").style.display = "None";
-      }
+    }
     trackOrder = (e) => {
         document.getElementById("TrackOrder").style.display = "block"
         var order = this.state.orders.filter((order) => {
@@ -112,167 +105,116 @@ class UpcomingOrder extends Component {
     }
     messageBoxChangeHandler = (e) => {
         this.setState({
-          messageBox: e.target.value
+            messageBox: e.target.value
         });
-      }
+    }
     sendMessage = (e) => {
         document.getElementById("Message").style.display = "block"
         var order = this.state.orders.filter((order) => {
-          if (order._id == e.target.id) {
-            return order
-          }
+            if (order._id == e.target.id) {
+                return order
+            }
         })
         this.setState({
             restaurantName: order[0].restaurantName,
-            restaurantId:order[0].restaurantId,
+            restaurantId: order[0].restaurantId,
             buyerAddress: order[0].buyerAddress,
             orderDate: order[0].orderDate,
 
         })
-    
-      }
-      messageSendHandler = (e) => {
+
+    }
+    messageSendHandler = (e) => {
         var today = new Date();
         var date = today.getFullYear() + '-' + (today.getMonth() + 1) + '-' + today.getDate();
         var time = today.getHours() + ":" + today.getMinutes();
         var CurrentDateTime = date + ' ' + time;
-        var data = { senderId: sessionStorage.getItem("BuyerId"), senderFirstName: sessionStorage.getItem("FirstName"), senderLastName: sessionStorage.getItem("LastName"), receiverId: this.state.restaurantId, receiverFirstName: this.state.restaurantName, receiverLastName:"", message: this.state.messageBox, orderDate: this.state.orderDate, messageDate: CurrentDateTime }
-    
-        axios.post(address + '/message', data, { headers: { Authorization: 'JWT ' + cookie.get("token") } })
-          .then(response => {
-            if (response.status === 200) {
-              this.setState({ messageFlag: false, messageBox: "" })
-              document.getElementById("Message").style.display = "none";
-    
-            } else if (response.status == 201) {
-              this.setState({ messageFlag: true })
-            }
-    
-          }).catch(error => {
-            sessionStorage.clear();
-            localStorage.clear();
-            cookie.remove("token");
-            this.setState({ authFlag: false })
-          });
-    
-      }
+        var data = { senderId: sessionStorage.getItem("BuyerId"), senderFirstName: sessionStorage.getItem("FirstName"), senderLastName: sessionStorage.getItem("LastName"), receiverId: this.state.restaurantId, receiverFirstName: this.state.restaurantName, receiverLastName: "", message: this.state.messageBox, orderDate: this.state.orderDate, messageDate: CurrentDateTime }
+        if(this.state.messageBox.length){
+            this.props.sendMessage(data);
+            this.setState({ messageFlag: false, messageBox: "" })
+            document.getElementById("Message").style.display = "none";
+        }else{
+            this.setState({ messageFlag: true })
+        }
+    }
     modalClose = () => {
         document.getElementById("TrackOrder").style.display = "None"
     }
     render() {
-      
-        var messageDisplay = ""
-        if (this.state.messageFlag == true) {
-          messageDisplay = (<ul class="li alert alert-danger">Message body is needed</ul>);
-        }
-        var redirectVar = "";
-        if (!this.state.authFlag) {
+        if (!cookie.get("token")) {
             redirectVar = <Redirect to="/login" />
-        }
-        var array = [];
-        if (this.state.orders.length) {
-
         } else {
-            array.push(<div class="NoOrder"></div>)
-        }
-        /*this.state.orders.map((order) => {
-            if (order.orderStatus != "Delivered" && order.orderStatus != "Cancelled") {
-                var val = JSON.parse(order.orderDetails);
-                var array2 = []
-
-                val.map((item) => {
-                    array2.push(<div class="row" style={{ marginLeft: '0px' }}>
-                        <div class="col-md-4">{item.itemName} X {item.itemCount}</div>
-                        <div class="col-md-4"></div>
-                        <div class="col-md-4"></div>
-                    </div>)
-                })
-                array.push(<div class="row embossed-heavy" style={{ marginLeft: '100px', marginRight: '140px', marginBottom: '10px', paddingBottom: '10px', fontWeight: 'bold', backgroundColor: 'white' }}>
-                <div class="row" style={{ backgroundColor: '#f2f2f2', marginLeft: '0px', marginRight: '0px' }}>
-                    <div class="col-md-2" style={{ paddingRight: '0px' }}><h5>Order Date :</h5></div>
-                    <div class="col-md-2" style={{ paddingLeft: '0px' }}><h5>{order.orderDate}</h5></div>
-                    <div class="col-md-5"></div>
-                    <div class="col-md-3">
-                        <button class="btn " id={order._id} style={{ backgroundColor: 'Green', color: 'white', fontSize: '16px', marginTop: '0px', marginTop: '10px' }} onClick={this.sendMessage}> Send A Message</button>
-                    </div>
-                </div>
-                <div class="row">
-                    <div class="col-md-8"><p style={{ fontSize: '20px', marginLeft: '10px', marginTop: '10px' }}>{order.restaurantName}</p></div>
-                    <div class="col-md-1"><button class="btn " id={order._id} style={{ backgroundColor: 'blue', color: 'white', fontSize: '16px', marginTop: '15px' }} onClick={this.trackOrder}>Track Order</button></div>
-                    <div class="col-md-3"></div>
-                </div>
-                <div class="row" style={{ marginLeft: '5px' }}> {array2}</div>
-            </div>)
+            var messageDisplay = ""
+            if (this.state.messageFlag == true) {
+                messageDisplay = (<ul class="li alert alert-danger">Message body is needed</ul>);
             }
+            var redirectVar = "";
+            var array = [];
+            if (this.state.orders.length) {
 
-
-        })*/
-        var items = []
-        var sum = parseFloat(0);
-        this.state.orderDetails.map((item) => {
-            sum += parseFloat(item.itemCostTotal)
-            items.push(<div class="row" style={{ marginLeft: '30px', marginBottom: '20px', textAlign: 'center' }}>
-                <div class="col-md-2">{item.itemCount}</div>
-                <div class="col-md-5">{item.itemName}</div>
-                <div class="col-md-3"></div>
-                <div class="col-md-2">${item.itemCostTotal}</div>
+            } else {
+                array.push(<div class="NoOrder"></div>)
+            }
+            var items = []
+            var sum = parseFloat(0);
+            this.state.orderDetails.map((item) => {
+                sum += parseFloat(item.itemCostTotal)
+                items.push(<div class="row" style={{ marginLeft: '30px', marginBottom: '20px', textAlign: 'center' }}>
+                    <div class="col-md-2">{item.itemCount}</div>
+                    <div class="col-md-5">{item.itemName}</div>
+                    <div class="col-md-3"></div>
+                    <div class="col-md-2">${item.itemCostTotal}</div>
+                </div>)
+            })
+            sum = sum.toFixed(2);
+            items.push(<br></br>)
+            items.push(<hr style={{ borderBottom: "1px solid black" }}></hr>)
+            items.push(<div class="row" style={{ marginRight: '20px' }}>
+                <div class="col-md-8"></div>
+                <div class="col-md-3"><h4>Amount Paid :</h4></div>
+                <div class="col-md-1"><h4>${sum}</h4></div>
             </div>)
-        })
-        sum = sum.toFixed(2);
-        items.push(<br></br>)
-        items.push(<hr style={{ borderBottom: "1px solid black" }}></hr>)
-        items.push(<div class="row" style={{ marginRight: '20px' }}>
-            <div class="col-md-8"></div>
-            <div class="col-md-3"><h4>Amount Paid :</h4></div>
-            <div class="col-md-1"><h4>${sum}</h4></div>
-        </div>)
-        var progressBar = []
-        switch (this.state.orderStatus) {
-            case 'New':
-                progressBar.push(<div class="progress-bar bg-danger" style={{ width: "20%" }}>Order Placed</div>)
-                break;
-            case 'Confirmed':
-                progressBar.push(<div class="progress-bar bg-danger" style={{ width: "20%" }}>Order Placed</div>)
-                progressBar.push(<div class="progress-bar bg-danger" style={{ width: "20%" }}>Order Confirmed </div>)
-                break;
-            case 'Preparing':
-                progressBar.push(<div class="progress-bar bg-danger" style={{ width: "20%" }}>Order Placed</div>)
-                progressBar.push(<div class="progress-bar bg-danger" style={{ width: "20%" }}>Order Confirmed </div>)
-                progressBar.push(<div class="progress-bar bg-danger" style={{ width: "20%" }}>Preparing</div>)
-                break;
-            case 'Ready':
-                progressBar.push(<div class="progress-bar bg-danger" style={{ width: "20%" }}>Order Placed</div>)
-                progressBar.push(<div class="progress-bar bg-danger" style={{ width: "20%" }}>Order Confirmed </div>)
-                progressBar.push(<div class="progress-bar bg-danger" style={{ width: "20%" }}>Preparing</div>)
-                progressBar.push(<div class="progress-bar bg-danger" style={{ width: "20%" }}>Ready</div>)
-                break;
-            case 'Delivered':
-                progressBar.push(<div class="progress-bar bg-danger" style={{ width: "20%" }}>Order Placed</div>)
-                progressBar.push(<div class="progress-bar bg-danger" style={{ width: "20%" }}>Order Confirmed </div>)
-                progressBar.push(<div class="progress-bar bg-danger" style={{ width: "20%" }}>Preparing</div>)
-                progressBar.push(<div class="progress-bar bg-danger" style={{ width: "20%" }}>Ready</div>)
-                progressBar.push(<div class="progress-bar bg-danger" style={{ width: "20%" }}>Delivered</div>)
+            var progressBar = []
+            switch (this.state.orderStatus) {
+                case 'New':
+                    progressBar.push(<div class="progress-bar bg-danger" style={{ width: "20%" }}>Order Placed</div>)
+                    break;
+                case 'Confirmed':
+                    progressBar.push(<div class="progress-bar bg-danger" style={{ width: "20%" }}>Order Placed</div>)
+                    progressBar.push(<div class="progress-bar bg-danger" style={{ width: "20%" }}>Order Confirmed </div>)
+                    break;
+                case 'Preparing':
+                    progressBar.push(<div class="progress-bar bg-danger" style={{ width: "20%" }}>Order Placed</div>)
+                    progressBar.push(<div class="progress-bar bg-danger" style={{ width: "20%" }}>Order Confirmed </div>)
+                    progressBar.push(<div class="progress-bar bg-danger" style={{ width: "20%" }}>Preparing</div>)
+                    break;
+                case 'Ready':
+                    progressBar.push(<div class="progress-bar bg-danger" style={{ width: "20%" }}>Order Placed</div>)
+                    progressBar.push(<div class="progress-bar bg-danger" style={{ width: "20%" }}>Order Confirmed </div>)
+                    progressBar.push(<div class="progress-bar bg-danger" style={{ width: "20%" }}>Preparing</div>)
+                    progressBar.push(<div class="progress-bar bg-danger" style={{ width: "20%" }}>Ready</div>)
+                    break;
+                case 'Delivered':
+                    progressBar.push(<div class="progress-bar bg-danger" style={{ width: "20%" }}>Order Placed</div>)
+                    progressBar.push(<div class="progress-bar bg-danger" style={{ width: "20%" }}>Order Confirmed </div>)
+                    progressBar.push(<div class="progress-bar bg-danger" style={{ width: "20%" }}>Preparing</div>)
+                    progressBar.push(<div class="progress-bar bg-danger" style={{ width: "20%" }}>Ready</div>)
+                    progressBar.push(<div class="progress-bar bg-danger" style={{ width: "20%" }}>Delivered</div>)
 
-                break;
+                    break;
+            }
         }
-
         return (
-
             <div>
                 {redirectVar}
                 <p style={{ color: 'blue', fontWeight: '900', fontSize: '25px', marginLeft: '100px', marginTop: '50px' }}>Upcoming Orders</p>
-               <div class="row" style={{paddingTop:'50px'}}>
+                <div class="row" style={{ paddingTop: '50px' }}>
                     <div class="col-md-1"></div>
                     <div class="col-md-7"><SortableList items={this.state.items} onSortEnd={this.onSortEnd} /></div>
                     <div class="col-md-4"></div>
 
-               </div>
-                 
-
-             {/* <ul class="list-group" style={{ marginLeft: '150px', marginRight: '450px', marginTop: '50px' }}>
-                    {array}
-
-                </ul>  */}
+                </div>
                 <div class="modal" id="TrackOrder" >
                     <div class="modal-dialog" style={{ width: '850px', height: '1850px' }}>
                         <div class="modal-content">
@@ -340,9 +282,18 @@ class UpcomingOrder extends Component {
 
 
 
-
         )
     }
 }
+function mapState(state) {
+    const { users, alert } = state;
+    return { users, alert };
+}
+const actionCreators = {
+    fetchUpcomingOrder: userActions.fetchUpcomingOrder,
+    sendMessage:userActions.sendMessage
+};
 
-export default UpcomingOrder;
+const connectedUpcomingOrderPage = connect(mapState, actionCreators)(UpcomingOrder);
+export { connectedUpcomingOrderPage as UpcomingOrder };
+
