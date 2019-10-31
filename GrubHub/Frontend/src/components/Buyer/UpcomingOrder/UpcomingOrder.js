@@ -30,10 +30,10 @@ class UpcomingOrder extends Component {
             buyerAddress: "",
             orderDate: "",
             orderDetails: [],
-            authFlag: true,
             messageFlag: false,
             messageBox: "",
-            items: []
+            items: [],
+            successFlag:false
 
         }
         this.messageBoxChangeHandler = this.messageBoxChangeHandler.bind(this);
@@ -47,13 +47,13 @@ class UpcomingOrder extends Component {
         this.props.fetchUpcomingOrder();
     }
     componentWillReceiveProps(newProps) {
-        var orderArray = newProps.users.order;
+        let orderArray = newProps.users.order;
         this.setState({ orders: orderArray });
-        var array = [];
+        let array = [];
         orderArray.map((order) => {
             if (order.orderStatus != "Delivered" && order.orderStatus != "Cancelled") {
-                var val = JSON.parse(order.orderDetails);
-                var array2 = []
+                let val = JSON.parse(order.orderDetails);
+                let array2 = []
 
                 val.map((item) => {
                     array2.push(<div class="row" style={{ marginLeft: '0px' }}>
@@ -88,7 +88,7 @@ class UpcomingOrder extends Component {
     }
     trackOrder = (e) => {
         document.getElementById("TrackOrder").style.display = "block"
-        var order = this.state.orders.filter((order) => {
+        let order = this.state.orders.filter((order) => {
             if (order._id == e.target.id) {
                 return order
             }
@@ -110,7 +110,7 @@ class UpcomingOrder extends Component {
     }
     sendMessage = (e) => {
         document.getElementById("Message").style.display = "block"
-        var order = this.state.orders.filter((order) => {
+        let order = this.state.orders.filter((order) => {
             if (order._id == e.target.id) {
                 return order
             }
@@ -125,16 +125,19 @@ class UpcomingOrder extends Component {
 
     }
     messageSendHandler = (e) => {
-        var today = new Date();
-        var date = today.getFullYear() + '-' + (today.getMonth() + 1) + '-' + today.getDate();
-        var time = today.getHours() + ":" + today.getMinutes();
-        var CurrentDateTime = date + ' ' + time;
-        var data = { senderId: sessionStorage.getItem("BuyerId"), senderFirstName: sessionStorage.getItem("FirstName"), senderLastName: sessionStorage.getItem("LastName"), receiverId: this.state.restaurantId, receiverFirstName: this.state.restaurantName, receiverLastName: "", message: this.state.messageBox, orderDate: this.state.orderDate, messageDate: CurrentDateTime }
-        if(this.state.messageBox.length){
+        let today = new Date();
+        let date = today.getFullYear() + '-' + (today.getMonth() + 1) + '-' + today.getDate();
+        let time = today.getHours() + ":" + today.getMinutes();
+        let CurrentDateTime = date + ' ' + time;
+        let data = { senderId: sessionStorage.getItem("BuyerId"), senderFirstName: sessionStorage.getItem("FirstName"), senderLastName: sessionStorage.getItem("LastName"), receiverId: this.state.restaurantId, receiverFirstName: this.state.restaurantName, receiverLastName: "", message: this.state.messageBox, orderDate: this.state.orderDate, messageDate: CurrentDateTime }
+        if (this.state.messageBox.length) {
             this.props.sendMessage(data);
-            this.setState({ messageFlag: false, messageBox: "" })
-            document.getElementById("Message").style.display = "none";
-        }else{
+            this.setState({ successFlag:true })
+            setTimeout(() => {
+                document.getElementById("Message").style.display = "none";
+                this.setState({ messageFlag: false, messageBox: "",successFlag:false })
+            }, 1000);
+        } else {
             this.setState({ messageFlag: true })
         }
     }
@@ -142,22 +145,30 @@ class UpcomingOrder extends Component {
         document.getElementById("TrackOrder").style.display = "None"
     }
     render() {
+        let redirectVar = "";
+        let array = [];
+        let items = [];
+        let messageDisplay = "";
+        let progressBar = [];
+
         if (!cookie.get("token")) {
             redirectVar = <Redirect to="/login" />
         } else {
-            var messageDisplay = ""
             if (this.state.messageFlag == true) {
                 messageDisplay = (<ul class="li alert alert-danger">Message body is needed</ul>);
             }
-            var redirectVar = "";
-            var array = [];
+            if(this.state.successFlag){
+                messageDisplay = (<ul class="li alert alert-success" style={{textAlign:"center",paddingTop:'10px'}}>Message Sent !!!</ul>);
+            }
+            
+            
+           
             if (this.state.orders.length) {
 
             } else {
                 array.push(<div class="NoOrder"></div>)
             }
-            var items = []
-            var sum = parseFloat(0);
+            let sum = parseFloat(0);
             this.state.orderDetails.map((item) => {
                 sum += parseFloat(item.itemCostTotal)
                 items.push(<div class="row" style={{ marginLeft: '30px', marginBottom: '20px', textAlign: 'center' }}>
@@ -175,7 +186,6 @@ class UpcomingOrder extends Component {
                 <div class="col-md-3"><h4>Amount Paid :</h4></div>
                 <div class="col-md-1"><h4>${sum}</h4></div>
             </div>)
-            var progressBar = []
             switch (this.state.orderStatus) {
                 case 'New':
                     progressBar.push(<div class="progress-bar bg-danger" style={{ width: "20%" }}>Order Placed</div>)
@@ -208,13 +218,14 @@ class UpcomingOrder extends Component {
         return (
             <div>
                 {redirectVar}
+          
                 <p style={{ color: 'blue', fontWeight: '900', fontSize: '25px', marginLeft: '100px', marginTop: '50px' }}>Upcoming Orders</p>
                 <div class="row" style={{ paddingTop: '50px' }}>
                     <div class="col-md-1"></div>
                     <div class="col-md-7"><SortableList items={this.state.items} onSortEnd={this.onSortEnd} /></div>
                     <div class="col-md-4"></div>
-
                 </div>
+                {array}
                 <div class="modal" id="TrackOrder" >
                     <div class="modal-dialog" style={{ width: '850px', height: '1850px' }}>
                         <div class="modal-content">
@@ -291,7 +302,7 @@ function mapState(state) {
 }
 const actionCreators = {
     fetchUpcomingOrder: userActions.fetchUpcomingOrder,
-    sendMessage:userActions.sendMessage
+    sendMessage: userActions.sendMessage
 };
 
 const connectedUpcomingOrderPage = connect(mapState, actionCreators)(UpcomingOrder);

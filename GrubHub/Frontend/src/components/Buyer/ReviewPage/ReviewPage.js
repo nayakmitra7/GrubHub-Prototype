@@ -10,7 +10,7 @@ class ReviewPage extends Component {
 
 
     render() {
-        var redirectVar = "";
+        let redirectVar = "";
 
         let displayMessage = null;
 

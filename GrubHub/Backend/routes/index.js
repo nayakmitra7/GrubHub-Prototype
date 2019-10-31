@@ -1,15 +1,14 @@
 //import the require dependencies
-var express = require('express');
-var app = express();
-var bodyParser = require('body-parser');
-var session = require('express-session');
+let express = require('express');
+let app = express();
+let bodyParser = require('body-parser');
 const passport = require('passport');
 const mongoose = require('mongoose');
 mongoose.set('useCreateIndex', true);
 mongoose.set('useFindAndModify', false);
 
 const address = "http://localhost:"
-var cors = require('cors');
+let cors = require('cors');
 require('../config/passport.js');
 require('dotenv').config();
 const uri= 'mongodb+srv://root:root@cluster0-skd7n.mongodb.net/test?retryWrites=true&w=majority';

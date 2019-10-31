@@ -1,8 +1,8 @@
 import React, { Component } from 'react';
 import cookie from 'js-cookie';
 import { Redirect } from 'react-router';
-import axios from 'axios';
-import { address } from '../../../constant'
+import {  ownerActions } from '../../../redux/actions/owner.actions';
+import { connect } from 'react-redux';
 import '../../../App.css';
 
 class MessageOwner extends Component {
@@ -11,7 +11,6 @@ class MessageOwner extends Component {
         this.state = {
             sent: "",
             received: "active",
-            authFlag: true,
             messageListSent: [],
             messageListReceived:[]
         }
@@ -21,41 +20,26 @@ class MessageOwner extends Component {
     componentDidMount() {
         this.receivedMessages();
     }
+    componentWillReceiveProps(newProps){
+        let messageSentArray=newProps.owner.messageSent;
+        this.setState({messageListSent:messageSentArray})
+        let messageReceivedArray=newProps.owner.messageReceived;
+        this.setState({messageListReceived:messageReceivedArray})
+    }
     receivedMessages = (e) => {
-        axios.get(address + '/message/received/' + sessionStorage.getItem("RestaurantID"), { headers: { Authorization: 'JWT ' + cookie.get("token") } })
-            .then(response => {
-                if (response.status === 200) {
-                    this.setState({ messageListReceived: response.data })
-                }
-            }).catch(error => {
-                sessionStorage.clear();
-                localStorage.clear();
-                cookie.remove("token");
-                this.setState({ authFlag: false })
-            });
+        this.props.fetchMessageReceived()
         this.setState({ sent: "", received: "active",messageListSent:"" })
 
     }
     sentMessages = (e) => {
-        axios.get(address + '/message/sent/' + sessionStorage.getItem("RestaurantID"), { headers: { Authorization: 'JWT ' + cookie.get("token") } })
-            .then(response => {
-                if (response.status === 200) {
-                    this.setState({ messageListSent: response.data })
-                }
-
-            }).catch(error => {
-                sessionStorage.clear();
-                localStorage.clear();
-                cookie.remove("token");
-                this.setState({ authFlag: false })
-            });
+        this.props.fetchMessageSent()
         this.setState({ received: "", sent: "active",messageListReceived:"" })
     }
     render() {
 
-        var redirectVar = "";
-        var array = [];
-        if (this.state.messageListSent.length) {
+        let redirectVar = "";
+        let array = [];
+        if (this.state.messageListSent) {
             this.state.messageListSent.map((message) => {
                 array.push(<div class="row embossed-heavy" style={{ marginLeft: '100px', marginRight: '140px', marginBottom: '10px', paddingBottom: '10px', fontWeight: 'bold', backgroundColor: 'white' }}>
                     <div class="row" style={{ backgroundColor: '#f2f2f2', marginLeft: '0px', marginRight: '0px' }}>
@@ -72,7 +56,7 @@ class MessageOwner extends Component {
                     </div>
                 </div>)
             })
-        }else if (this.state.messageListReceived.length) {
+        }else if (this.state.messageListReceived) {
             this.state.messageListReceived.map((message) => {
                 array.push(<div class="row embossed-heavy" style={{ marginLeft: '100px', marginRight: '140px', marginBottom: '10px', paddingBottom: '10px', fontWeight: 'bold', backgroundColor: 'white' }}>
                     <div class="row" style={{ backgroundColor: '#f2f2f2', marginLeft: '0px', marginRight: '0px' }}>
@@ -94,7 +78,7 @@ class MessageOwner extends Component {
             })
         } 
 
-        if (!this.state.authFlag) {
+        if (!cookie.get("token")) {
             redirectVar = <Redirect to="/LoginOwner" />
         }
 
@@ -119,5 +103,14 @@ class MessageOwner extends Component {
         )
     }
 }
+function mapState(state) {
+    const { owner, alert } = state;
+    return { owner, alert };
+}
+const actionCreators = {
+    fetchMessageSent: ownerActions.fetchMessageSent,
+    fetchMessageReceived:ownerActions.fetchMessageReceived
+};
 
-export default MessageOwner;
+const connectedMessagePage = connect(mapState, actionCreators)(MessageOwner);
+export { connectedMessagePage as MessageOwner };

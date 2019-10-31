@@ -1,10 +1,9 @@
 import '../../../App.css';
 import React, { Component } from 'react';
 import cookie from 'js-cookie';
-import axios from 'axios';
 import { Redirect } from 'react-router';
-import {address} from '../../../constant'
-
+import { userActions } from '../../../redux/actions/user.actions';
+import { connect } from 'react-redux';
 
 
 class HomePage extends Component {
@@ -19,21 +18,7 @@ class HomePage extends Component {
        
     }
     componentDidMount=(e)=>{
-        axios.get(address+'/users/details/'+sessionStorage.getItem("BuyerId"),{headers: {Authorization: 'JWT '+cookie.get("token")}})
-        .then(response => {
-            if(response.status === 200){
-                sessionStorage.setItem("Address",response.data.buyerAddress);
-                sessionStorage.setItem("FirstName",response.data.buyerFirstName);
-                sessionStorage.setItem("LastName",response.data.buyerLastName);
-                return Promise.resolve();
-            }
-          
-        }).catch(error => {
-            sessionStorage.clear();
-            localStorage.clear();
-            cookie.remove("token");
-            this.setState({ authFlag: false })
-        });
+        this.props.fetchUserDetails();
     }
    
     itemSearchedChangeHandler=(e)=>{
@@ -78,6 +63,15 @@ class HomePage extends Component {
         )
     }
 }
+function mapState(state) {
+    const { users, alert } = state;
+    return { users, alert };
+}
+const actionCreators = {
+    fetchUserDetails: userActions.fetchUserDetails
+};
 
-export default HomePage;
+const connectedHomePage = connect(mapState, actionCreators)(HomePage);
+export { connectedHomePage as HomePage };
+
 

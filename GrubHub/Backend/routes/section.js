@@ -1,7 +1,7 @@
-var express = require('express');
+let express = require('express');
 const { check, validationResult } = require('express-validator');
-var router = express.Router();
-var message = [];
+let router = express.Router();
+let message = [];
 let section = require('../model/sectionModel');
 let item = require('../model/itemModel');
 
@@ -33,7 +33,7 @@ router.post('/',
 
         }
     })
-    //.sort({menuSectionName:1})
+//.sort({menuSectionName:1})
 router.get('/(:data)', function (req, res, next) {
     section.find({ restaurantId: req.params.data }).exec((err, result) => {
         if (err) {
@@ -48,39 +48,44 @@ router.get('/(:data)', function (req, res, next) {
 
 router.put('/', [check("menuSectionName", "Section Name is needed.").not().isEmpty()],
     function (req, res, next) {
-        var data = { menuSectionName: req.body.menuSectionName, menuSectionDesc: req.body.menuSectionDesc }
-        section.findOneAndUpdate({ _id: req.body.menuSectionId }, data).exec((err, user) => {
-            if (err) {
-                next();
-            } else {
-                res.status(200).end("Success");
-            }
-        });
+        message = validationResult(req).errors;
+        if (message.length > 0) {
+            next(message);
+        } else {
+            let data = { menuSectionName: req.body.menuSectionName, menuSectionDesc: req.body.menuSectionDesc }
+            section.findOneAndUpdate({ _id: req.body.menuSectionId }, data).exec((err, user) => {
+                if (err) {
+                    next();
+                } else {
+                    res.status(200).end("Success");
+                }
+            });
+        }
     })
 
-var promiseDelete = (req) => {
+let promiseDelete = (req) => {
     return new Promise((resolve, reject) => {
-        item.deleteMany({sectionId:req.params.data}).exec((err,result)=>{
-            if(err){
+        item.deleteMany({ sectionId: req.params.data }).exec((err, result) => {
+            if (err) {
                 reject()
-            }else{
+            } else {
                 resolve()
             }
 
-        })   
+        })
     })
 }
 router.delete('/(:data)', function (req, res, next) {
     promiseDelete(req).then(() => {
-        section.deleteOne({_id:req.params.data}).exec((err,result)=>{
-            if(err){
+        section.deleteOne({ _id: req.params.data }).exec((err, result) => {
+            if (err) {
                 next()
-            }else{
+            } else {
                 res.status(200).send("Success")
             }
 
         })
-        
+
     })
 })
 router.use((error, req, res, next) => {
@@ -90,8 +95,8 @@ router.use((error, req, res, next) => {
     res.end(JSON.stringify(error));
 })
 router.use((req, res, next) => {
-    var message = [];
-    var errors = { msg: "Something went wrong!" }
+    let message = [];
+    let errors = { msg: "Something went wrong!" }
     message.push(errors);
     res.writeHead(201, {
         'Content-Type': 'text/plain'

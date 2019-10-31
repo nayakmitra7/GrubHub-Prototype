@@ -11,7 +11,6 @@ class Message extends Component {
         this.state = {
             sent: "",
             received: "active",
-            authFlag: true,
             messageListSent: [],
             messageListReceived:[]
         }
@@ -22,9 +21,9 @@ class Message extends Component {
         this.receivedMessages();
     }
     componentWillReceiveProps(newProps){
-        var messageSentArray=newProps.users.message;
+        let messageSentArray=newProps.users.messageSent;
         this.setState({messageListSent:messageSentArray})
-        var messageReceivedArray=newProps.users.message;
+        let messageReceivedArray=newProps.users.messageReceived;
         this.setState({messageListReceived:messageReceivedArray})
     }
     receivedMessages = (e) => {
@@ -39,12 +38,12 @@ class Message extends Component {
     }
     render() {
 
-        var redirectVar = "";
-        var array = [];
+        let redirectVar = "";
+        let array = [];
         if (!cookie.get("token")) {
             redirectVar = <Redirect to="/login" />
         }else{
-        if (this.state.messageListReceived.length) {
+        if (this.state.messageListReceived) {
             this.state.messageListReceived.map((message) => {
                 array.push(<div class="row embossed-heavy" style={{ marginLeft: '100px', marginRight: '140px', marginBottom: '10px', paddingBottom: '10px', fontWeight: 'bold', backgroundColor: 'white' }}>
                     <div class="row" style={{ backgroundColor: '#f2f2f2', marginLeft: '0px', marginRight: '0px' }}>
@@ -64,7 +63,7 @@ class Message extends Component {
 
 
             })
-        } else  if (this.state.messageListSent.length) {
+        } else  if (this.state.messageListSent) {
             this.state.messageListSent.map((message) => {
                 array.push(<div class="row embossed-heavy" style={{ marginLeft: '100px', marginRight: '140px', marginBottom: '10px', paddingBottom: '10px', fontWeight: 'bold', backgroundColor: 'white' }}>
                     <div class="row" style={{ backgroundColor: '#f2f2f2', marginLeft: '0px', marginRight: '0px' }}>

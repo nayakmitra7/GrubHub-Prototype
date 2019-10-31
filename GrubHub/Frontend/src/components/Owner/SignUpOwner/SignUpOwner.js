@@ -1,10 +1,9 @@
 import React, { Component } from 'react';
 import '../../../App.css';
-import axios from 'axios';
 import cookie from 'js-cookie';
 import { Redirect } from 'react-router';
-import { address } from '../../../constant';
-
+import {  ownerActions } from '../../../redux/actions/owner.actions';
+import { connect } from 'react-redux';
 
 class SignUpOwner extends Component {
     constructor() {
@@ -16,7 +15,6 @@ class SignUpOwner extends Component {
             phone: "",
             errorMessage: [],
             passwordError: "",
-            authFlag: false,
             zipCode: "",
             restaurant: ""
         }
@@ -69,41 +67,24 @@ class SignUpOwner extends Component {
     }
     signupHandler = (e) => {
         e.preventDefault();
-        axios.defaults.withCredentials = true;
-
-        var data = { firstName: this.state.firstName, lastName: this.state.lastName, phone: this.state.phone, email: this.state.email, restaurant: this.state.restaurant, zipcode: this.state.zipCode, password: this.state.password }
-        axios.post(address+"/owner/signup", data)
-            .then((response) => {
-                if (response.status === 200) {
-                    sessionStorage.setItem("OwnerFirstName",this.state.firstName)
-                    sessionStorage.setItem("username",this.state.email);
-                    sessionStorage.setItem("RestaurantID",response.data.ID);
-                    cookie.set("token",response.data.tokens);
-                    this.setState({
-                        authFlag: true,
-                        errorMessage: []
-                    })
-                } else if (response.status === 201) {
-                    this.setState({
-                        errorMessage: response.data,
-                        authFlag: false
-                    })
-                }
-
-            })
+        let data = { firstName: this.state.firstName, lastName: this.state.lastName, phone: this.state.phone, email: this.state.email, restaurant: this.state.restaurant, zipcode: this.state.zipCode, password: this.state.password }
+       this.props.signup(data)
 
     }
     render() {
 
-        var redirectVar = "";
+        let redirectVar = "";
         if (cookie.get("token")) {
             redirectVar = <Redirect to="/SetUpOwner" />
         }
-        let displayMessage = null;
-        if (this.state.authFlag == false) {
-            displayMessage = (this.state.errorMessage.map((error) => {
-                return (<div class="li alert-danger">{error.msg}</div>)
-            }))
+        let alertMessage=[]
+        const {alert} =this.props
+        if (alert.message) {
+            if (alert.type == "danger") {
+                alert.message.forEach(element => {
+                    alertMessage.push(<div class="alert alert-danger">{element.msg}</div>)
+                });
+            } 
         }
         return (
             <div class="backgroundImgRest">
@@ -150,11 +131,19 @@ class SignUpOwner extends Component {
 
                     </div>
                 </div>
-                <div class="row" style={{paddingBottom:'20px',paddingLeft:'30px'}}>{displayMessage}</div>
+                <div class="row" style={{paddingBottom:'20px',paddingLeft:'30px'}}>{alertMessage}</div>
                 
             </div>
         )
     }
 }
-//export Home Component
-export default SignUpOwner;
+function mapState(state) {
+    const { owner,alert } = state;
+    return { owner,alert };
+}
+const actionCreators = {
+    signup:ownerActions.signUp
+};
+
+const connectedSignUpOwner = connect(mapState, actionCreators)(SignUpOwner);
+export { connectedSignUpOwner as SignUpOwner };

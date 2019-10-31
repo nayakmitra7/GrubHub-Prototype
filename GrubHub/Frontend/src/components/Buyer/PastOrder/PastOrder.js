@@ -15,21 +15,64 @@ class PastOrder extends Component {
             buyerAddress: "",
             orderDate: "",
             orderDetails: [],
-            authFlag:true
-
+            messageFlag: false,
+            messageBox: "",
         }
+        this.messageBoxChangeHandler = this.messageBoxChangeHandler.bind(this);
 
     }
     componentDidMount() {
         this.props.fetchPastOrder();
     }
     componentWillReceiveProps(newProp){
-        var order=newProp.users.order;
+        let order=newProp.users.order;
         this.setState({orders:order})
+    }
+    modalCloseMessage = () => {
+        this.setState({ messageFlag: false, messageBox: "" })
+        document.getElementById("Message").style.display = "None";
+    }
+    messageBoxChangeHandler = (e) => {
+        this.setState({
+            messageBox: e.target.value
+        });
+    }
+    sendMessage = (e) => {
+        document.getElementById("Message").style.display = "block"
+        let order = this.state.orders.filter((order) => {
+            if (order._id == e.target.id) {
+                return order
+            }
+        })
+        this.setState({
+            restaurantName: order[0].restaurantName,
+            restaurantId: order[0].restaurantId,
+            buyerAddress: order[0].buyerAddress,
+            orderDate: order[0].orderDate,
+
+        })
+
+    }
+    messageSendHandler = (e) => {
+        let today = new Date();
+        let date = today.getFullYear() + '-' + (today.getMonth() + 1) + '-' + today.getDate();
+        let time = today.getHours() + ":" + today.getMinutes();
+        let CurrentDateTime = date + ' ' + time;
+        let data = { senderId: sessionStorage.getItem("BuyerId"), senderFirstName: sessionStorage.getItem("FirstName"), senderLastName: sessionStorage.getItem("LastName"), receiverId: this.state.restaurantId, receiverFirstName: this.state.restaurantName, receiverLastName: "", message: this.state.messageBox, orderDate: this.state.orderDate, messageDate: CurrentDateTime }
+        if (this.state.messageBox.length) {
+            this.props.sendMessage(data);
+            this.setState({ successFlag:true })
+            setTimeout(() => {
+                document.getElementById("Message").style.display = "none";
+                this.setState({ messageFlag: false, messageBox: "",successFlag:false })
+            }, 1000);
+        } else {
+            this.setState({ messageFlag: true })
+        }
     }
     trackOrder = (e) => {
         document.getElementById("TrackOrder").style.display = "block"
-        var order = this.state.orders.filter((order) => {
+        let order = this.state.orders.filter((order) => {
             if (order._id == e.target.id) {
                 return order
             }
@@ -48,16 +91,27 @@ class PastOrder extends Component {
         document.getElementById("TrackOrder").style.display = "None"
     }
     render() {
-        var redirectVar = "";
+        let redirectVar = "";
+        let array = [];
+        let items = [];
+        let messageDisplay = "";
+        let progressBar = [];
+
      if (!cookie.get("token")) {
             redirectVar = <Redirect to="/login" />
         }else{
-        var array = [];
-        if (this.state.orders.length) {
+        
+        if (this.state.messageFlag == true) {
+            messageDisplay = (<ul class="li alert alert-danger">Message body is needed</ul>);
+        }
+        if(this.state.successFlag){
+            messageDisplay = (<ul class="li alert alert-success" style={{textAlign:"center",paddingTop:'10px'}}>Message Sent !!!</ul>);
+        }
+        if (this.state.orders) {
             this.state.orders.map((order) => {
                 if (order.orderStatus == "Delivered" || order.orderStatus == "Cancelled") {
-                    var val = JSON.parse(order.orderDetails);
-                    var array2 = []
+                    let val = JSON.parse(order.orderDetails);
+                    let array2 = []
     
                     val.map((item) => {
                         array2.push(<div class="row" style={{ marginLeft: '0px' }}>
@@ -71,7 +125,10 @@ class PastOrder extends Component {
                          <div class="row" style={{backgroundColor:'#f2f2f2',marginLeft:'0px',marginRight:'0px'}}>
                             <div class="col-md-2" style={{paddingRight:'0px'}}><h5>Order Date :</h5></div>
                             <div class="col-md-2" style={{paddingLeft:'0px'}}><h5>{order.orderDate}</h5></div>
-                            <div class="col-md-9">  </div>
+                            <div class="col-md-5">  </div>
+                            <div class="col-md-3">
+                            <button class="btn " id={order._id} style={{ backgroundColor: 'Green', color: 'white', fontSize: '16px', marginTop: '0px', marginTop: '10px' }} onClick={this.sendMessage}> Send A Message</button>
+                        </div>
                         </div>
                         <div class="row">
                             <div class="col-md-8"><p style={{ fontSize: '20px', marginLeft: '10px', marginTop: '10px' }}>{order.restaurantName}</p></div>
@@ -86,8 +143,8 @@ class PastOrder extends Component {
             array.push(<div class="NoOrder"></div>)
         }
         
-        var items = []
-        var sum = parseFloat(0);
+       
+        let sum = parseFloat(0);
         this.state.orderDetails.map((item) => {
             sum += parseFloat(item.itemCostTotal)
             items.push(<div class="row" style={{ marginLeft: '30px', marginBottom: '20px', textAlign: 'center' }}>
@@ -104,7 +161,6 @@ class PastOrder extends Component {
             <div class="col-md-3"><h4>Amount Paid :</h4></div>
             <div class="col-md-1"><h4>${sum}</h4></div>
         </div>)
-        var progressBar = []
         switch (this.state.orderStatus) {
             case 'Delivered':
                 progressBar.push(<div class="progress-bar bg-danger" style={{ width: "20%" }}>Order Placed</div>)
@@ -161,7 +217,35 @@ class PastOrder extends Component {
                         </div>
                     </div>
                 </div>
+                <div class="modal" id="Message" >
+                    <div class="modal-dialog" style={{ width: '850px', height: '1850px' }}>
+                        <div class="modal-content">
 
+                            <div class="modal-header">
+                                <div class="row">
+                                    <div class="col-md-4"></div>
+                                    <div class="col-md-6"><h1 class="modal-title"> Send a Message</h1></div>
+                                    <div clas="col-md-1"></div>
+                                    <div class="col-md-1"><button type="button" id="closeSection" data-dismiss="modal" onClick={this.modalCloseMessage}>&times;</button></div>
+                                </div>
+                            </div>
+                            <div class="modal-body" style={{ height: '200%' }}>
+
+                                <div class="row" style={{ marginBottom: '20px', textAlign: 'center' }}><h3>{this.state.restaurantName}</h3></div>
+                                <div class="row" style={{ marginBottom: '20px', textAlign: 'center' }}> <textarea rows="4" cols="40" onChange={this.messageBoxChangeHandler} name="messageBox" value={this.state.messageBox}></textarea></div>
+
+                            </div>
+                            <div class="modal-footer">
+                                <div class="row">
+                                    <div class="col-md-2"></div>
+                                    <div class="col-md-4"><button class="btn" style={{ backgroundColor: 'Green', color: 'white', width: '200%' }} onClick={this.messageSendHandler} >Send</button></div>
+                                    <div class="col-md-4"></div>
+                                </div>
+                                <div class="row">{messageDisplay}</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
 
             </div>
 
@@ -177,8 +261,9 @@ function mapState(state) {
 }
 const actionCreators = {
     fetchPastOrder: userActions.fetchPastOrder,
+    sendMessage: userActions.sendMessage
+
 };
 
 const connectedPastOrderPage = connect(mapState, actionCreators)(PastOrder);
-//export Login Component
 export { connectedPastOrderPage as PastOrder };

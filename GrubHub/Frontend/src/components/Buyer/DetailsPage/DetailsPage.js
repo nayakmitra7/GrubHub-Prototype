@@ -1,10 +1,9 @@
 import React, { Component } from 'react';
 import '../../../App.css';
-import axios from 'axios';
 import cookie from 'js-cookie';
 import { Redirect } from 'react-router';
-import { address } from '../../../constant'
-
+import { userActions } from '../../../redux/actions/user.actions';
+import { connect } from 'react-redux';
 
 
 class DetailsPage extends Component {
@@ -25,13 +24,12 @@ class DetailsPage extends Component {
             itemPrice: "",
             itemSection: "",
             itemId: "",
-            count: JSON.parse(localStorage.getItem(sessionStorage.getItem("username"))) ? JSON.parse(localStorage.getItem(sessionStorage.getItem("username"))).length : 0,
+            count: JSON.parse(localStorage.getItem(sessionStorage.getItem("BuyerId"))) ? JSON.parse(localStorage.getItem(sessionStorage.getItem("BuyerId"))).length : 0,
             itemCount: 1,
             itemCostTotal: 0,
-            bag: localStorage.getItem(sessionStorage.getItem("username")) ? JSON.parse(localStorage.getItem(sessionStorage.getItem("username"))) : [],
+            bag: localStorage.getItem(sessionStorage.getItem("BuyerId")) ? JSON.parse(localStorage.getItem(sessionStorage.getItem("BuyerId"))) : [],
             itemsPresent: [],
             checkoutFlag: false,
-            authFlag: true,
             currentPage: 1,
             itemsPerPage: 4
         }
@@ -47,33 +45,23 @@ class DetailsPage extends Component {
         this.setState({
             currentPage: Number(event.target.id)
         })
-        for (var i = 1; i <= Math.ceil(this.state.itemsPresent.length / this.state.itemsPerPage); i++) {
+        for (let i = 1; i <= Math.ceil(this.state.itemsPresent.length / this.state.itemsPerPage); i++) {
             document.getElementById(i).className = "page-item";
 
         }
         document.getElementById(event.target.id).className = "page-item active";
     }
     CheckOut = () => {
+        let today = new Date();
+        let date = today.getFullYear() + '-' + (today.getMonth() + 1) + '-' + today.getDate();
+        let time = today.getHours() + ":" + today.getMinutes();
+        let CurrentDateTime = date + ' ' + time
+        let data = { restaurantId: this.state.restaurantId, buyerID: sessionStorage.getItem("BuyerId"), buyerAddress: sessionStorage.getItem("Address"), buyerFirstName: sessionStorage.getItem("FirstName"), buyerLastName: sessionStorage.getItem("LastName"), orderStatus: "New", bag: localStorage.getItem(sessionStorage.getItem("BuyerId")), date: CurrentDateTime, restaurantName: sessionStorage.getItem("RestaurantName") }
+        this.props.placeOrder(data);
         this.setState({ checkoutFlag: true })
-        var today = new Date();
-        var date = today.getFullYear() + '-' + (today.getMonth() + 1) + '-' + today.getDate();
-        var time = today.getHours() + ":" + today.getMinutes();
-        var CurrentDateTime = date + ' ' + time
-        var data = { restaurantId: this.state.restaurantId, buyerID: sessionStorage.getItem("BuyerId"), buyerAddress: sessionStorage.getItem("Address"), buyerFirstName: sessionStorage.getItem("FirstName"), buyerLastName: sessionStorage.getItem("LastName"), orderStatus: "New", bag: localStorage.getItem(sessionStorage.getItem("username")), date: CurrentDateTime, restaurantName: sessionStorage.getItem("RestaurantName") }
-        axios.post(address + '/order/placeOrder', data, {
-            headers: { Authorization: 'JWT ' + cookie.get("token") }
-        })
-            .then(response => {
-                if (response.status === 200) {
-                    this.setState({ bag: [] })
-                    localStorage.removeItem(sessionStorage.getItem("username"))
-                }
-            }).catch(error => {
-                cookie.remove("token");
-                sessionStorage.clear();
-                localStorage.clear();
-                this.setState({ authFlag: false })
-            })
+        this.setState({ bag: [] })
+        localStorage.removeItem(sessionStorage.getItem("BuyerId"))
+
     }
     openShoppingCart = () => {
         document.getElementById("shoppingCart").style.display = "block";
@@ -99,7 +87,7 @@ class DetailsPage extends Component {
         return new Promise((resolve, reject) => {
             document.getElementById("warningMessage").style.display = "none";
             this.setState({ bag: [], count: 0 });
-            localStorage.setItem(sessionStorage.getItem("username"), JSON.stringify([]));
+            localStorage.setItem(sessionStorage.getItem("BuyerId"), JSON.stringify([]));
             resolve();
         })
     }
@@ -110,7 +98,7 @@ class DetailsPage extends Component {
     }
     checkIfSameRetaurant = (e) => {
         if (this.state.bag.length) {
-            var item = this.state.bag[0];
+            let item = this.state.bag[0];
             if (item.restaurantId == this.state.restaurantId) {
                 return 1;
             } else {
@@ -121,9 +109,9 @@ class DetailsPage extends Component {
         }
     }
     addToBag = () => {
-        var item = { itemId: this.state.itemId, itemName: this.state.itemName, itemCostTotal: parseFloat(this.state.itemCostTotal), itemCount: this.state.itemCount, restaurantId: this.state.restaurantId }
+        let item = { itemId: this.state.itemId, itemName: this.state.itemName, itemCostTotal: parseFloat(this.state.itemCostTotal), itemCount: this.state.itemCount, restaurantId: this.state.restaurantId }
         if (this.checkIfSameRetaurant()) {
-            var itemPresent = false;
+            let itemPresent = false;
             this.state.bag.forEach((itemInBag) => {
                 if (itemInBag.itemId == this.state.itemId) {
                     itemPresent = true;
@@ -134,7 +122,7 @@ class DetailsPage extends Component {
             this.setState({ messageFlag: true })
             if (itemPresent == false) {
                 this.state.bag.push(item);
-                var count1 = this.state.count;
+                let count1 = this.state.count;
                 this.setState({ count: count1 + 1 })
             }
             this.setState({ itemCount: 1 });
@@ -142,7 +130,7 @@ class DetailsPage extends Component {
                 document.getElementById("modalAddItem").style.display = "none"
                 this.setState({ messageFlag: false })
             }, 1000);
-            localStorage.setItem(sessionStorage.getItem("username"), JSON.stringify(this.state.bag));
+            localStorage.setItem(sessionStorage.getItem("BuyerId"), JSON.stringify(this.state.bag));
         } else {
             document.getElementById("warningMessage").style.display = "block"
         }
@@ -153,86 +141,53 @@ class DetailsPage extends Component {
     }
     decrementCount = (e) => {
         if (this.state.itemCount > 1) {
-            var quantity = this.state.itemCount - 1;
-            var cost = this.state.itemPrice;
-            var costTotal = quantity * cost;
+            let quantity = this.state.itemCount - 1;
+            let cost = this.state.itemPrice;
+            let costTotal = quantity * cost;
             this.setState({ itemCount: quantity, itemCostTotal: parseFloat(costTotal).toFixed(2) })
 
         }
     }
     incrementCount = (e) => {
-        var quantity = this.state.itemCount + 1;
-        var cost = this.state.itemPrice;
-        var costTotal = quantity * cost;
+        let quantity = this.state.itemCount + 1;
+        let cost = this.state.itemPrice;
+        let costTotal = quantity * cost;
         this.setState({ itemCount: quantity, itemCostTotal: parseFloat(costTotal).toFixed(2) })
 
     }
-
-    promiseGetSections = () => {
-        return new Promise((resolve, reject) => {
-
-            axios.get(address + '/section/' + this.state.restaurantId, {
-                headers: { Authorization: 'JWT ' + cookie.get("token") }
-            }).then(response => {
-                if (response.status === 200) {
-                    this.setState({
-                        sectionsPresent: response.data
-                    })
-                    resolve();
-                }
-            }).catch(error => {
-                sessionStorage.clear();
-                localStorage.clear();
-                cookie.remove("token");
-                this.setState({ authFlag: false })
-            })
-
-        })
-    }
-    promiseGetItems = () => {
-        return new Promise((resolve, reject) => {
-            var responseArray = []
-            return new Promise((resolve, reject) => {
-                axios.get(address + '/item/' + this.state.restaurantId, {
-                    headers: { Authorization: 'JWT ' + cookie.get("token") }
+    componentWillReceiveProps(newProps) {
+        let responseArray = []
+        this.setState({ sectionsPresent: newProps.users.sections })
+        this.setState({ itemsPresent: newProps.users.items })
+        if (newProps.users.sections && newProps.users.items) {
+            newProps.users.sections.forEach((section) => {
+                newProps.users.items.forEach((item) => {
+                    if (section._id == item.sectionId) {
+                        responseArray.push(item)
+                    }
                 })
-                    .then(response => {
-                        if (response.status === 200) {
-                            this.state.sectionsPresent.forEach((section) => {
-                                response.data.forEach((item) => {
-                                    if (section._id == item.sectionId) {
-                                        responseArray.push(item)
-                                    }
-                                })
-                            })
-                            this.setState({
-                                itemsPresent: responseArray
-                            })
-                            resolve();
-                        }
-                    }).catch(error => {
-                        sessionStorage.clear();
-                        localStorage.clear();
-                        cookie.remove("token");
-                        this.setState({ authFlag: false })
-                    })
-
             })
-        })
+            this.setState({
+                itemsPresent: responseArray
+            })
+        }
+
     }
+
+
 
     addItemModal = (e) => {
 
         document.getElementById("modalAddItem").style.display = "block";
         this.setState({ itemId: e.target.id })
-        var item = this.state.itemsPresent.filter((i) => {
+        let item = this.state.itemsPresent.filter((i) => {
             if (i._id == e.target.id) {
                 return i;
             }
         })
-        var quantity = this.state.itemCount;
-        var cost = parseFloat(item[0].ItemPrice);
-        var itemTotal = quantity * cost;
+        let quantity = this.state.itemCount;
+        let cost = parseFloat(item[0].ItemPrice);
+        let itemTotal = quantity * cost;
         this.setState({
             itemName: item[0].ItemName,
             itemDesc: item[0].ItemDesc,
@@ -247,31 +202,32 @@ class DetailsPage extends Component {
         this.setState({ itemCount: 1 })
     }
     deleteItem = (e) => {
-        var val = this.state.bag.filter((bag) => {
+        let val = this.state.bag.filter((bag) => {
             if (e.target.id != bag.itemId) {
                 return bag;
             }
         })
-        var len = val.length
+        let len = val.length
         this.setState({ bag: val, count: len })
-        localStorage.setItem(sessionStorage.getItem("username"), JSON.stringify(val));
+        localStorage.setItem(sessionStorage.getItem("BuyerID"), JSON.stringify(val));
 
     }
     componentDidMount() {
-
-        this.promiseGetSections().then(() => {
-            this.promiseGetItems();
-
-        })
+        this.props.fetchSections(this.state.restaurantId);
+        this.props.fetchItems(this.state.restaurantId);
 
     }
     render() {
-        var redirectVar = "";
-        var bagDispay = ""
-        var bagButtonDisplay = "";
-        var array = [];
-        var subTotal = parseFloat(0);
-        var itemImage = "";
+        let redirectVar = "";
+        let bagDispay = ""
+        let bagButtonDisplay = "";
+        let array = [];
+        let subTotal = parseFloat(0);
+        let itemImage = "";
+        let messageDisplay = ""
+        let renderPageNumbers = [];
+        let pageNumbers = [];
+        let currentPageitems = []
         if (this.state.itemImage) {
             itemImage = (<div>
                 <img style={{ width: "70%", paddingBottom: "10px", paddingTop: "10px" }} src={this.state.itemImage} class="rounded" /></div>)
@@ -309,11 +265,11 @@ class DetailsPage extends Component {
             bagDispay = (<div class=" emptyBag" style={{ paddingTop: '250px', paddingBottom: '250px' }}></div>)
             bagButtonDisplay = ""
         }
-        if (!this.state.authFlag) {
+        if (!cookie.get("token")) {
             redirectVar = <Redirect to="/login" />
         }
         if (this.state.checkoutFlag == true) {
-            redirectVar = <Redirect to="/ReviewPage" />
+            redirectVar= <Redirect to="/ReviewPage" />
         }
         if (this.state.searchFlag == true) {
             this.setState({ searchFlag: false })
@@ -321,34 +277,34 @@ class DetailsPage extends Component {
                 redirectVar = <Redirect to="/SearchPage" />
             }
         }
-        var messageDisplay = ""
         if (this.state.messageFlag == true) {
             messageDisplay = (<ul class="li alert alert-success">Added this to your bag !!!</ul>);
         }
-        let renderPageNumbers = [];
-        const { itemsPresent, currentPage, itemsPerPage } = this.state;
-        const indexOfLastTodo = currentPage * itemsPerPage;
-        const indexOfFirstTodo = indexOfLastTodo - itemsPerPage;
-        const currentPageitems = itemsPresent.slice(indexOfFirstTodo, indexOfLastTodo);
-        const pageNumbers = [];
-        for (let i = 1; i <= Math.ceil(itemsPresent.length / itemsPerPage); i++) {
-            pageNumbers.push(i);
-        }
-        pageNumbers.map(number => {
-            if (number == 1) {
-                renderPageNumbers.push(
-                    <li class="page-item active" id={number}><a class="page-link" id={number} key={number} onClick={this.handleClick} style={{ color: 'black' }}> {number}</a></li>
-                )
-            } else {
-                renderPageNumbers.push(
-                    <li class="page-item" id={number}><a class="page-link" id={number} key={number} onClick={this.handleClick} style={{ color: 'black' }}> {number}</a></li>
-                )
+
+        if (this.state.itemsPresent) {
+            const { itemsPresent, currentPage, itemsPerPage } = this.state;
+            const indexOfLastTodo = currentPage * itemsPerPage;
+            const indexOfFirstTodo = indexOfLastTodo - itemsPerPage;
+            currentPageitems = itemsPresent.slice(indexOfFirstTodo, indexOfLastTodo);
+            for (let i = 1; i <= Math.ceil(itemsPresent.length / itemsPerPage); i++) {
+                pageNumbers.push(i);
             }
+            pageNumbers.map(number => {
+                if (number == 1) {
+                    renderPageNumbers.push(
+                        <li class="page-item active" id={number}><a class="page-link" id={number} key={number} onClick={this.handleClick} style={{ color: 'black' }}> {number}</a></li>
+                    )
+                } else {
+                    renderPageNumbers.push(
+                        <li class="page-item" id={number}><a class="page-link" id={number} key={number} onClick={this.handleClick} style={{ color: 'black' }}> {number}</a></li>
+                    )
+                }
 
 
-        });
-        var array = [];
-        if (this.state.sectionsPresent.length) {
+            });
+        }
+
+        if (this.state.sectionsPresent) {
             array.push(<div><div class="row" style={{ fontSize: "30px", fontWeight: "900" }}>
                 <div class="col-md-7"></div>
                 <div class="col-md-5"> {this.state.restaurantName}</div>
@@ -363,7 +319,7 @@ class DetailsPage extends Component {
                 </div>
             </div>)
             this.state.sectionsPresent.map((section) => {
-                var flag = 0;
+                let flag = 0;
                 array.push(<div>
                     <div class="row" style={{ fontSize: "20px", fontWeight: "900" }}>
                         <div class="col-md-11" style={{ alignItems: "center" }}>{section.menuSectionName} </div>
@@ -575,5 +531,15 @@ class DetailsPage extends Component {
         )
     }
 }
-//export Login Component
-export default DetailsPage;
+function mapState(state) {
+    const { users, alert } = state;
+    return { users, alert };
+}
+const actionCreators = {
+    fetchSections: userActions.fetchSections,
+    fetchItems: userActions.fetchItems,
+    placeOrder: userActions.placeOrder
+};
+
+const connectedDetailsPage = connect(mapState, actionCreators)(DetailsPage);
+export { connectedDetailsPage as DetailsPage };

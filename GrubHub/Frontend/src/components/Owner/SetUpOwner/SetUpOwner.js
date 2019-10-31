@@ -1,9 +1,9 @@
 import React, { Component } from 'react';
 import cookie from 'js-cookie';
-import axios from 'axios';
 import { Redirect } from 'react-router';
-import { address } from '../../../constant';
 import '../../../App.css';
+import {  ownerActions } from '../../../redux/actions/owner.actions';
+import { connect } from 'react-redux';
 
 class SetUpOwner extends Component {
     constructor(props) {
@@ -15,17 +15,14 @@ class SetUpOwner extends Component {
             pictures: [],
             phone: "",
             errorMessage: [],
-            authFlag: true,
-            readOnly: false,
             restaurantId: sessionStorage.getItem("RestaurantID"),
             restaurantName: "",
             restaurantCuisine: "",
             restaurantAddress: "",
             restaurantZipCode: "",
             errorFlag: "No update",
-            updated: false,
-            authFlag:true
-        }
+            updated: false       
+         }
         this.firstNameChangeHandler = this.firstNameChangeHandler.bind(this);
         this.lastNameChangeHandler = this.lastNameChangeHandler.bind(this);
         this.emailChangeHandler = this.emailChangeHandler.bind(this);
@@ -37,36 +34,26 @@ class SetUpOwner extends Component {
         this.restaurantAddressChangeHandler = this.restaurantAddressChangeHandler.bind(this);
         this.restaurantZipCodeChangeHandler = this.restaurantZipCodeChangeHandler.bind(this);
     }
-
+    componentWillReceiveProps(newProps) {
+        if(newProps.owner.details){
+            let userDetails = newProps.owner.details;
+            this.setState({
+                firstName: userDetails.ownerFirstName,
+                lastName: userDetails.ownerLastName,
+                email: userDetails.ownerEmail,
+                phone: userDetails.ownerPhone,
+                restaurantName: userDetails.restaurantName,
+                restaurantCuisine: userDetails.restaurantCuisine,
+                restaurantAddress: userDetails.restaurantAddress,
+                restaurantZipCode: userDetails.restaurantZipCode,
+            })
+        }
+        
+    }
 
     componentDidMount() {
-        var data = ""
-        axios.get(address + '/owner/details/' + sessionStorage.getItem("RestaurantID"),{headers: {Authorization: 'JWT '+cookie.get("token")}})
-            .then(response => {
-                if (response.status === 200) {
-                    this.setState({
-                        firstName: response.data.ownerFirstName,
-                        lastName: response.data.ownerLastName,
-                        email: response.data.ownerEmail,
-                        phone: response.data.ownerPhone,
-                        image: response.data.ownerImage,
-                        restaurantName: response.data.restaurantName,
-                        restaurantCuisine: response.data.restaurantCuisine,
-                        restaurantAddress: response.data.restaurantAddress,
-                        restaurantZipCode: response.data.restaurantZipCode
-                    })
-                } else if (response.status === 201) {
-                    this.setState({
-                        errorFlag: "Some error",
-                        errorMessage: response.data
-                    })
-                }
-            }).catch(error => {
-                sessionStorage.clear();
-                localStorage.clear();
-                cookie.remove("token");
-                this.setState({ authFlag: false })
-            });
+        this.props.fetchDetails();
+
     }
 
     firstNameChangeHandler = (e) => {
@@ -115,56 +102,32 @@ class SetUpOwner extends Component {
         })
     }
 
-    promise1 = () => {
-
-        return new Promise((resolve, reject) => {
-            
-        })
-    }
     updateHandler = (e) => {
         e.preventDefault();
-        axios.defaults.withCredentials = true;
         const data = { firstName: this.state.firstName, lastName: this.state.lastName, email: this.state.email, phone: this.state.phone, restaurantId: this.state.restaurantId, restaurantName: this.state.restaurantName, restaurantAddress: this.state.restaurantAddress, restaurantCuisine: this.state.restaurantCuisine, restaurantZipCode: this.state.restaurantZipCode };
-        axios.post(address + '/owner/update', data,{headers: {Authorization: 'JWT '+cookie.get("token")}})
-        .then(response => {
-            if (response.status === 201) {
-                this.setState({
-                    errorFlag: "Some error",
-                    errorMessage: response.data
-                })
-            }
-            else if (response.status === 200) {
-                sessionStorage.setItem("OwnerFirstName", this.state.firstName)
-                sessionStorage.setItem("RestaurantName", this.state.restaurantName)
-                this.setState({ errorFlag: "Success" })
-            }
-        }).catch(error => {
-            sessionStorage.clear();
-            localStorage.clear();
-            cookie.remove("token");
-            this.setState({ authFlag: false })
-        });
+        this.props.updateDetails(data)
     
     }
     render() {
         let redirectVar = "";
 
-        if (!this.state.authFlag) {
+        if (!cookie.get("token")) {
             redirectVar = <Redirect to="/LoginOwner" />
         }
-        if (this.state.errorFlag == "Success") {
+       
+        const { alert } = this.props;
+        let alertMessage = [];
+        if (alert.message) {
+            if (alert.type == "danger") {
+                alert.message.forEach(element => {
+                    alertMessage.push(<div class="alert alert-danger">{element.msg}</div>)
+                });
+            } 
+        }
+        if (alert.type == "success") {
             redirectVar = <Redirect to="/HomeOwner" />
 
         }
-        let messageDisplay = "";
-        if (this.state.errorFlag == "Some error") {
-            messageDisplay = (this.state.errorMessage.map((error) => {
-                return (<li class=" li alert-danger">{error.msg}</li>)
-            }))
-        } else if (this.state.errorFlag == "Success") {
-            messageDisplay = (<ul class="li alert alert-success">Successfully Updated !!!</ul>);
-        }
-
         let createDisplay = (
             <div >
                 <div class="row" style={{paddingTop:'10px'}}>
@@ -245,11 +208,20 @@ class SetUpOwner extends Component {
                 <div class="col-md-2"></div>
                     <div class="col-md-8" style={{marginTop:'50px',background:'white',paddingBottom:'50px',paddingLeft:'150px'}}>{createDisplay}</div>
                 </div>
-                <div class="row"> { messageDisplay }</div>
+                <div class="row"> { alertMessage }</div>
 
             </div>
         )
     }
 }
+function mapState(state) {
+    const { owner, alert } = state;
+    return { owner, alert };
+}
+const actionCreators = {
+    fetchDetails: ownerActions.fetchOwnerDetails,
+    updateDetails: ownerActions.updateDetails
+};
 
-export default SetUpOwner;
+const connectedSetUpOwner = connect(mapState, actionCreators)(SetUpOwner);
+export { connectedSetUpOwner as SetUpOwner };

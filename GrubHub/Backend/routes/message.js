@@ -1,6 +1,6 @@
-var express = require('express');
+let express = require('express');
 const { check, validationResult } = require('express-validator');
-var router = express.Router();
+let router = express.Router();
 let messages = require('../model/messageModel');
 
 
@@ -20,7 +20,7 @@ router.post('/',
         const newMessage = new messages({
             senderFirstName, senderLastName, receiverFirstName, receiverLastName, messageBody, senderId, receiverId, orderDate,messageDate
         });
-       var message = validationResult(req).errors;
+       let message = validationResult(req).errors;
         if (message.length > 0) {
             next(message);
         } else {
@@ -66,8 +66,8 @@ router.use((error, req, res, next) => {
     res.end(JSON.stringify(error));
 })
 router.use((req, res, next) => {
-    var message = [];
-    var errors = { msg: "Something went wrong!" }
+    let message = [];
+    let errors = { msg: "Something went wrong!" }
     message.push(errors);
     res.writeHead(201, {
         'Content-Type': 'text/plain'

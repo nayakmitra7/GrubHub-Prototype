@@ -1,28 +1,22 @@
 import React, {Component} from 'react';
 import '../../../App.css';
-import axios from 'axios';
 import cookie from 'js-cookie';
 import {Redirect} from 'react-router';
-import {address} from '../../../constant'
-
+import { ownerActions } from '../../../redux/actions/owner.actions';
+import { connect } from 'react-redux';
 class LoginOwner extends Component{
     constructor(props){
         super(props);
         this.state = {
             username : "",
             password : "",
-            authFlag : false,
             errorMessage : []
         }
         this.usernameChangeHandler = this.usernameChangeHandler.bind(this);
         this.passwordChangeHandler = this.passwordChangeHandler.bind(this);
         this.submitLogin = this.submitLogin.bind(this);
     }
-    componentDidMount(){
-        this.setState({
-            authFlag : false
-        })
-    }
+
     usernameChangeHandler = (e) => {
         this.setState({
             username : e.target.value
@@ -34,60 +28,31 @@ class LoginOwner extends Component{
         })
     }
     fetchDetails = (username)=>{
-        axios.get(address+'/owner/detailsBasic/'+username)
-        .then(response => {
-            if(response.status === 200){
-                sessionStorage.setItem("OwnerFirstName",response.data.ownerFirstName);
-                sessionStorage.setItem("RestaurantID",response.data._id)
-                sessionStorage.setItem("RestaurantName",response.data.restaurantName)
-                return Promise.resolve();
-            }
-          
-        });
+        this.props.fetchBasic(username)
+    
     }
     submitLogin = (e) => {
         e.preventDefault();
-        const data = {
-            username : this.state.username,
-            password : this.state.password
-        }
         this.fetchDetails(this.state.username);
-        axios.defaults.withCredentials = true;
-        axios.post(address+'/owner/login',data)
-            .then(response => {
-                if(response.status === 200){
-                    this.setState({
-                        authFlag : true
-                    })
-                sessionStorage.setItem("username",this.state.username);
-                cookie.set("token",response.data.tokens);
-                    this.setState({
-                        authFlag : true})
-                }
-                else if(response.status === 201){
-                    this.setState({
-                        authFlag : false,
-                        errorMessage : response.data
-                    })
-                }
-            });
+        this.props.loginOwner(this.state.username,this.state.password)
     }
 
     render(){
-      var redirectVar="";
+      let redirectVar="";
         if(cookie.get("token")){
             redirectVar = <Redirect to= "/HomeOwner"/>
         }
-        let displayMessage = null;
-        if(this.state.authFlag==false){
-            displayMessage = ( this.state.errorMessage.map( (error) =>{
-                return (<ul class="li alert-danger">{error.msg}</ul>)
-            }))
+         const { alert } = this.props;
+        let alertMessage = [];
+        if (alert.message) {
+            alert.message.forEach(element => {
+                alertMessage.push(<div class="alert alert-danger">{element.msg}</div>)
+            });
         }
         return(
             <div>
                 {redirectVar}
-                {displayMessage} 
+                {alertMessage} 
             <div class="backgroundImgRest">
             <div class="container">            
                 <div class="login-form">
@@ -115,5 +80,14 @@ class LoginOwner extends Component{
         )
     }
 }
-//export Login Component
-export default LoginOwner;
+function mapState(state) {
+    const {  alert } = state;
+    return {  alert };
+}
+const actionCreators = {
+  loginOwner:ownerActions.login,
+  fetchBasic:ownerActions.fetchBasic
+};
+
+const connectedLoginOwner = connect(mapState, actionCreators)(LoginOwner);
+export { connectedLoginOwner as LoginOwner };

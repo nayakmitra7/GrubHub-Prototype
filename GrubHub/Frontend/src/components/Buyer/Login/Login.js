@@ -1,6 +1,5 @@
 import React, { Component } from 'react';
 import '../../../App.css';
-import axios from 'axios';
 import cookie from 'js-cookie';
 import { Redirect } from 'react-router';
 import { userActions } from '../../../redux/actions/user.actions';
@@ -12,7 +11,6 @@ class Login extends Component {
         this.state = {
             username: "",
             password: "",
-            authFlag: false,
             errorMessage: []
         }
         this.usernameChangeHandler = this.usernameChangeHandler.bind(this);
@@ -21,9 +19,7 @@ class Login extends Component {
         this.fetchDetails = this.fetchDetails.bind(this);
     }
     componentDidMount() {
-        this.setState({
-            authFlag: false
-        })
+       
     }
     usernameChangeHandler = (e) => {
         this.setState({
@@ -40,11 +36,6 @@ class Login extends Component {
     }
     submitLogin = (e) => {
         e.preventDefault();
-        const data = {
-            username: this.state.username,
-            password: this.state.password
-        }
-        axios.defaults.withCredentials = true;
         this.fetchDetails(this.state.username);
         const { username, password } = this.state;
         this.props.login(username, password);
@@ -52,12 +43,12 @@ class Login extends Component {
     }
 
     render() {
-        var redirectVar=""
+        let redirectVar=""
         if (cookie.get('token')) {
             redirectVar = <Redirect to="/HomePage" />
         }
         const { alert } = this.props;
-        var alertMessage = [];
+        let alertMessage = [];
         if (alert.message) {
             alert.message.forEach(element => {
                 alertMessage.push(<div class="alert alert-danger">{element.msg}</div>)

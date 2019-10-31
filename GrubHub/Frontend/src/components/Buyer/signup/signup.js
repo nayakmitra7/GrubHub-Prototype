@@ -1,9 +1,9 @@
 import React, { Component } from 'react';
 import '../../../App.css';
-import axios from 'axios';
 import cookie from 'js-cookie';
 import { Redirect } from 'react-router';
-import { address } from '../../../constant';
+import { userActions } from '../../../redux/actions/user.actions';
+import { connect } from 'react-redux';
 
 class signup extends Component {
     constructor() {
@@ -15,7 +15,6 @@ class signup extends Component {
             password: "",
             errorMessage: [],
             passwordError: "",
-            authFlag: false,
             address: ""
         }
         this.firstNameChangeHandler = this.firstNameChangeHandler.bind(this);
@@ -52,47 +51,29 @@ class signup extends Component {
     }
     signupHandler = (e) => {
         e.preventDefault();
-        axios.defaults.withCredentials = true;
-
-        var data = { firstName: this.state.firstName, lastName: this.state.lastName, password: this.state.password, email: this.state.email, address: this.state.address }
-        axios.post(address+"/users/signup", data)
-            .then((response) => {
-                sessionStorage.setItem("username",this.state.email)
-                sessionStorage.setItem("FirstName",this.state.firstName)
-                sessionStorage.setItem("BuyerId",response.data.id)
-                if (response.status === 200) {
-                    cookie.set("token",response.data.tokens);
-                    this.setState({
-                        authFlag: true,
-                        errorMessage: []
-                    })
-
-                } else if (response.status === 201) {
-                    this.setState({
-                        errorMessage: response.data,
-                        authFlag: false
-                    })
-                }
-
-            })
+        let data = { firstName: this.state.firstName, lastName: this.state.lastName, password: this.state.password, email: this.state.email, address: this.state.address }
+        this.props.signUp(data)
+           
 
     }
     render() {
 
-        var redirectVar = "";
+        let redirectVar = "";
         if (cookie.get("token")) {
             redirectVar = <Redirect to="/HomePage" />
         }
-        let displayMessage = null;
-        if (this.state.authFlag == false) {
-            displayMessage = (this.state.errorMessage.map((error) => {
-                return (<div class="li alert-danger">{error.msg}</div>)
-            }))
+        const { alert } = this.props;
+        let alertMessage = [];
+        if (alert.message) {
+            alert.message.forEach(element => {
+
+                alertMessage.push(<div class="alert alert-danger">{element.msg}</div>)
+            });
         }
         return (
             <div>
                 {redirectVar}
-                {displayMessage}
+                {alertMessage}
                 <div class="backgroundImg">
                     <div class="container">
                         <div class="login-form">
@@ -148,5 +129,13 @@ class signup extends Component {
         )
     }
 }
-//export Home Component
-export default signup;
+function mapState(state) {
+    const { alert } = state;
+    return { alert };
+}
+const actionCreators = {
+    signUp: userActions.signUp
+};
+
+const connectedSignupPage = connect(mapState, actionCreators)(signup);
+export { connectedSignupPage as signup };

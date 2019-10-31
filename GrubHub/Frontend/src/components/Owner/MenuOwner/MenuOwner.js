@@ -1,10 +1,10 @@
 import React, { Component } from 'react';
 import '../../../App.css';
-import axios from 'axios';
 import cookie from 'js-cookie';
 import { Redirect } from 'react-router';
-import {address} from '../../../constant'
-
+import { ownerActions } from '../../../redux/actions/owner.actions';
+import { alertActions } from '../../../redux/actions/alert.actions';
+import { connect } from 'react-redux';
 
 
 class MenuOwner extends Component {
@@ -16,7 +16,7 @@ class MenuOwner extends Component {
             addItem: false,
             editItem: false,
             editSection: false,
-            deleteItem:false,
+            deleteItem: false,
             displayItem: true,
             sectionName: "",
             sectionId: "",
@@ -29,12 +29,11 @@ class MenuOwner extends Component {
             itemPrice: "",
             itemSection: "",
             itemId: "",
-            filePreview:null,
-            file:null,
+            filePreview: null,
+            file: null,
             itemForSection: [],
             itemsPresent: [],
             errorMessage: [],
-            authFlag:true,
             currentPage: 1,
             itemsPerPage: 4
         }
@@ -49,77 +48,53 @@ class MenuOwner extends Component {
         this.addItemHandler = this.addItemHandler.bind(this);
         this.fetchItemsforSection = this.fetchItemsforSection.bind(this);
         this.modalCloseSection = this.modalCloseSection.bind(this);
-        this.pictureChangeHandler=this.pictureChangeHandler.bind(this)
+        this.pictureChangeHandler = this.pictureChangeHandler.bind(this)
         this.handleClick = this.handleClick.bind(this);
 
+    }
+
+    componentDidMount() {
+        this.props.fetchSections(this.state.restaurantId)
+        this.props.fetchItems(this.state.restaurantId)
+
+    }
+    componentWillReceiveProps(newProps) {
+        let responseArray = []
+        this.setState({ sectionsPresent: newProps.owner.sections })
+        this.setState({ itemsPresent: newProps.owner.items })
+        if (newProps.owner.sections && newProps.owner.items) {
+            newProps.owner.sections.forEach((section) => {
+                newProps.owner.items.forEach((item) => {
+                    if (section._id == item.sectionId) {
+                        responseArray.push(item)
+                    }
+                })
+            })
+            this.setState({
+                itemsPresent: responseArray
+            })
+        }
     }
     handleClick = (event) => {
         this.setState({
             currentPage: Number(event.target.id)
         })
-        for (var i = 1; i <= Math.ceil(this.state.itemsPresent.length / this.state.itemsPerPage); i++) {
+        for (let i = 1; i <= Math.ceil(this.state.itemsPresent.length / this.state.itemsPerPage); i++) {
             document.getElementById(i).className = "page-item";
 
         }
         document.getElementById(event.target.id).className = "page-item active";
     }
-    pictureChangeHandler =(event)=>{
-        if(event.target.files[0]){
+    pictureChangeHandler = (event) => {
+        if (event.target.files[0]) {
             this.setState({
                 file: event.target.files[0],
                 filePreview: URL.createObjectURL(event.target.files[0])
             });
         }
     }
-    promiseGetSections = () => {
-        return new Promise((resolve, reject) => {
-
-            axios.get(address+'/section/' + this.state.restaurantId,{headers: {Authorization: 'JWT '+cookie.get("token")}})
-                .then(response => {
-                    if (response.status === 200) {
-                        this.setState({
-                            sectionsPresent: response.data
-                        })
-                        resolve();
-                    }
-                }).catch(error => {
-                    sessionStorage.clear();
-                    localStorage.clear();
-                    cookie.remove("token");
-                    this.setState({ authFlag: false })
-                });
-
-        })
-    }
-    promiseGetItems = () => {
-        return new Promise((resolve, reject) => {
-            var responseArray=[]
-            axios.get(address+'/item/' + this.state.restaurantId,{headers: {Authorization: 'JWT '+cookie.get("token")}})
-                .then(response => {
-                    if (response.status === 200) {
-                        this.state.sectionsPresent.forEach((section) => {
-                            response.data.forEach((item) => {
-                                if (section._id == item.sectionId) {
-                                    responseArray.push(item)
-                                }
-                            })
-                        })
-                        this.setState({
-                            itemsPresent: responseArray
-                        })
-                        resolve();
-                    }
-                }).catch(error => {
-                    sessionStorage.clear();
-                    localStorage.clear();
-                    cookie.remove("token");
-                    this.setState({ authFlag: false })
-                });
-
-        })
-    }
     fetchItemsforSection = (e) => {
-        var itemsForThisSection = (this.state.itemsPresent.filter((item) => {
+        let itemsForThisSection = (this.state.itemsPresent.filter((item) => {
             if (item.sectionId == e.target.value) {
                 return item;
             }
@@ -128,50 +103,25 @@ class MenuOwner extends Component {
 
     }
     updateItemHandler = (e) => {
-        var data = { itemId: this.state.itemId, itemName: this.state.itemName, itemSection: this.state.itemSection, itemPrice: this.state.itemPrice, itemDesc: this.state.itemDesc, restaurantId: this.state.restaurantId }
-    
-        axios.put(address+"/item", data,{headers: {Authorization: 'JWT '+cookie.get("token")}}).then(response => {
-            if (response.status === 200) {
-                this.setState({
-                    errorFlag: "Success"
-                })
-                if(this.state.file && this.state.filePreview){
-                    let formData = new FormData();
-                    formData.append('myImage',this.state.file,this.state.itemId);
-                    const config = {
-                        headers: {
-                            Authorization: 'JWT '+cookie.get("token"),
-                            'content-type': 'multipart/form-data'
-                        }
-                    };
-                    axios.post(address+"/item/image",formData,config)
-                        .then((response) => {
-
-                        }).catch((error) => {
-                    });
+        let data = { itemId: this.state.itemId, itemName: this.state.itemName, itemSection: this.state.itemSection, itemPrice: this.state.itemPrice, itemDesc: this.state.itemDesc, restaurantId: this.state.restaurantId }
+        if (this.state.file && this.state.filePreview) {
+            let formData = new FormData();
+            formData.append('myImage', this.state.file, this.state.itemId);
+            const config = {
+                headers: {
+                    Authorization: 'JWT ' + cookie.get("token"),
+                    'content-type': 'multipart/form-data'
                 }
-                this.promiseGetItems();
-                this.modalClose();
-                window.location.reload()
-            } else {
-                this.setState({
-                    errorMessage: response.data,
-                    errorFlag: "Some error"
-                })
-            }
-        })
+            };
+            this.props.updateItemAndImage(data,formData,config);
+        }else{
+            this.props.updateItem(data)
+        }
     }
 
-    componentDidMount() {
-        //this.promiseGetRestDetails().then(() => {
-            this.promiseGetSections().then(()=>{
-                this.promiseGetItems();
 
-            })
-            this.promiseGetItems();
-        //})
-    }
     addItemChangeHandler = (e) => {
+        this.props.fetchSections(this.state.restaurantId);
         this.setState({ addItem: true, addSection: false, displayItem: false, errorFlag: "" });
         document.getElementById("modalItem").style.display = "block"
     }
@@ -203,48 +153,27 @@ class MenuOwner extends Component {
         this.setState({ itemSection: e.target.value });
     }
     deleteItemHandler = () => {
-
-        axios.delete(address+"/item/" + this.state.itemId,{headers: {Authorization: 'JWT '+cookie.get("token")}}).then(response => {
-            if (response.status === 200) {
-                this.setState({
-                    errorFlag: "Success"
-                })
-                this.promiseGetSections().then(()=>{
-                    this.promiseGetItems();
-
-                })
-                this.modalClose();
-            } else {
-                this.setState({
-                    errorMessage: response.data,
-                    errorFlag: "Some error"
-                })
-            }
-        }).catch(error => {
-            sessionStorage.clear();
-            localStorage.clear();
-            cookie.remove("token");
-            this.setState({ authFlag: false })
-        });
+        this.props.deleteItem(this.state.itemId);
+        window.location.reload()
     }
     modalClose = () => {
-        document.getElementById("preview").value=null
+        window.location.reload();
+        document.getElementById("preview").value = null
         document.getElementById("modalItem").style.display = "none";
-        
-        this.setState({ editItem: false, itemName: "", itemDesc: "", itemPrice: "", itemSection: "", addItem: false, errorFlag: "", errorMessage: [],filePreview:null });
+
+        this.setState({ editItem: false, itemName: "", itemDesc: "", itemPrice: "", itemSection: "", addItem: false, errorFlag: "", errorMessage: [], filePreview: null });
     }
     modalCloseSection = (e) => {
-
+        this.props.fetchSections(this.state.restaurantId)
+        this.props.clearAlerts()
         document.getElementById("modalAddSection").style.display = "none";
         this.setState({ editSection: false, sectionName: "", sectionDesc: "", addSection: false, errorFlag: "", errorMessage: [] });
     }
     modalCloseDeleteSection = (e) => {
-
         document.getElementById("deleteSectionConfrimation").style.display = "none";
         this.setState({ editSection: false, sectionName: "", sectionDesc: "", addSection: false, errorFlag: "", errorMessage: [] });
     }
     editSectionModal = (e) => {
-
         document.getElementById("modalAddSection").style.display = "block";
         this.state.sectionsPresent.filter((section) => {
             if (section._id == e.target.id) {
@@ -254,213 +183,111 @@ class MenuOwner extends Component {
         })
     }
     editItemModal = (e) => {
-
         document.getElementById("modalItem").style.display = "block";
         this.state.itemsPresent.filter((item) => {
             if (item._id == e.target.id) {
-                this.setState({ itemName: item.ItemName, itemDesc: item.ItemDesc, itemPrice: item.ItemPrice, itemSection: item.sectionId, editItem: true, itemId: item._id ,file:item.itemImage});
+                this.setState({ itemName: item.ItemName, itemDesc: item.ItemDesc, itemPrice: item.ItemPrice, itemSection: item.sectionId, editItem: true, itemId: item._id, file: item.itemImage });
             }
         })
 
     }
     deleteSectionHandler = (e) => {
-        this.setState({deleteItem:true});
+        this.setState({ deleteItem: true });
         document.getElementById("deleteSectionConfrimation").style.display = "block";
         document.getElementById("modalAddSection").style.display = "none";
     }
     updateSectionHandler = (e) => {
-        var data = { menuSectionName: this.state.sectionName, menuSectionDesc: this.state.sectionDesc, menuSectionId: this.state.sectionId }
-        axios.put(address+"/section", data,{headers: {Authorization: 'JWT '+cookie.get("token")}}).then(response => {
-            if (response.status === 200) {
-                this.setState({
-                    errorFlag: "Success"
-                })
-                this.promiseGetSections();
-                setTimeout(() => {
-                    this.modalCloseSection();
-                }, 1000);
-                
-            } else {
-                this.setState({
-                    errorMessage: response.data,
-                    errorFlag: "Some error"
-                })
-            }
-        }).catch(error => {
-            sessionStorage.clear();
-            localStorage.clear();
-            cookie.remove("token");
-            this.setState({ authFlag: false })
-        });
+        let data = { menuSectionName: this.state.sectionName, menuSectionDesc: this.state.sectionDesc, menuSectionId: this.state.sectionId }
+        this.props.updateSection(data);
     }
-    saveItemImage =(id)=>{
-            if(this.state.file){
-                let formData = new FormData();
-                formData.append('myImage',this.state.file,id);
-                const config = {
-                    headers: {
-                        Authorization: 'JWT '+cookie.get("token"),
-                        'content-type': 'multipart/form-data'
-                    }
-                };
-                axios.post(address+"/item/image",formData,config)
-                    .then((response) => {
-                    }).catch(error => {
-                        sessionStorage.clear();
-                        localStorage.clear();
-                        cookie.remove("token");
-                        this.setState({ authFlag: false })
-                    });
-            }
-    }
+    
     addItemHandler = (e) => {
-
         e.preventDefault();
-        axios.defaults.withCredentials = true;
-        var data = { itemName: this.state.itemName, itemDesc: this.state.itemDesc, itemPrice: this.state.itemPrice, restaurantId: this.state.restaurantId, itemSection: this.state.itemSection }
-        axios.post(address+'/item', data,{headers: {Authorization: 'JWT '+cookie.get("token")}}).then((response) => {
-            if (response.status === 200) {
-                this.setState({
-                    errorFlag: "Success",
-                    errorMessage: []
-                })
-                if(this.state.file){
-                    this.saveItemImage(response.data.itemId);
+        let data = { itemName: this.state.itemName, itemDesc: this.state.itemDesc, itemPrice: this.state.itemPrice, restaurantId: this.state.restaurantId, itemSection: this.state.itemSection }
+        if (this.state.file) {
+            const config = {
+                headers: {
+                    Authorization: 'JWT ' + cookie.get("token"),
+                    'content-type': 'multipart/form-data'
                 }
-                
-                this.promiseGetItems();
-                this.promiseGetSections();
-                
-                setTimeout(() => {
-                    this.modalClose();
-                    window.location.reload();
-                },0);
-                
-               
+            };
+            this.props.addItemImageAndItem(data, this.state.file, config);
+        } else {
+            this.props.addItem(data);
 
-            } else if (response.status === 201) {
-                this.setState({
-                    errorMessage: response.data,
-                    errorFlag: "Some error"
-                })
-
-            }
-
-        }).catch(error => {
-            sessionStorage.clear();
-            localStorage.clear();
-            cookie.remove("token");
-            this.setState({ authFlag: false })
-        });
+        }
     }
 
     addSectionHandler = (e) => {
-        axios.defaults.withCredentials = true;
-        var data = { sectionName: this.state.sectionName, sectionDesc: this.state.sectionDesc, restaurantId: this.state.restaurantId }
-        axios.post(address+'/section', data,{headers: {Authorization: 'JWT '+cookie.get("token")}}).then((response) => {
-            if (response.status === 200) {
-                this.setState({
-                    errorFlag: "Success",
-                    errorMessage: []
-                })
-                this.promiseGetSections();
-                setTimeout(() => {
-                    this.modalCloseSection();
-                }, 1000);
-                
-
-            } else if (response.status === 201) {
-                this.setState({
-                    errorMessage: response.data,
-                    errorFlag: "Some error"
-                })
-
-            }
-
-        }).catch(error => {
-            sessionStorage.clear();
-            localStorage.clear();
-            cookie.remove("token");
-            this.setState({ authFlag: false })
-        });
-
+        let data = { sectionName: this.state.sectionName, sectionDesc: this.state.sectionDesc, restaurantId: this.state.restaurantId }
+        this.props.addSection(data);
     }
 
-    deleteItemPlusSection=(e)=>{
-        axios.delete(address+"/section/" + this.state.sectionId,{headers: {Authorization: 'JWT '+cookie.get("token")}}).then(response => {
-            if (response.status === 200) {
-                this.setState({
-                    errorFlag: "Success"
-                })
-                setTimeout(() => {
-                    this.modalCloseDeleteSection();
-                    window.location.reload();
-                },0);
-
-                //this.modalCloseDeleteSection();
-
-            } else {
-                this.setState({
-                    errorMessage: response.data,
-                    errorFlag: "Some error"
-                })
-            }
-        }).catch(error => {
-            sessionStorage.clear();
-            localStorage.clear();
-            cookie.remove("token");
-            this.setState({ authFlag: false })
-        });
+    deleteItemPlusSection = (e) => {
+        this.props.deleteSection(this.state.sectionId);
+        window.location.reload();
     }
     render() {
-
-
-
-        var redirectVar = "";
-        var image="";
-        if (!this.state.authFlag) {
+        let redirectVar = "";
+        let image = "";
+        let SectionHeading = "";
+        let messageDisplay = "";
+        let buttonItem = "";
+        let ItemHeading = "";
+        let array = [];
+        let buttonSection = "";
+        let renderPageNumbers = [];
+        let currentPageitems = [];
+        let itemsToDelete = "";
+        const { alert } = this.props;
+        let alertMessage = [];
+        if (!cookie.get("token")) {
             redirectVar = <Redirect to="/LoginOwner" />
         }
-       
-        var itemsToDelete="";
-        
-        if(this.state.deleteItem==true){
-            itemsToDelete=this.state.itemsPresent.map((item)=>{
-                if(this.state.sectionId==item.sectionId){
-                    return(<li>{item.ItemName}</li>)
+
+
+        if (this.state.deleteItem == true) {
+            itemsToDelete = this.state.itemsPresent.map((item) => {
+                if (this.state.sectionId == item.sectionId) {
+                    return (<li>{item.ItemName}</li>)
                 }
             })
         }
+        if (alert.message) {
+            alert.message.forEach(element => {
+                if (alert.type == "success") {
+                    alertMessage.push(<div class="alert alert-success">{element.msg}</div>)
 
-        var SectionHeading = "";
-        let messageDisplay = "";
+                } else {
+                    alertMessage.push(<div class="alert alert-danger">{element.msg}</div>)
 
-        let buttonItem = "";
-        let ItemHeading = "";
-        var array = [];
-        var buttonSection = "";
-        let renderPageNumbers = [];
-        const { itemsPresent, currentPage, itemsPerPage } = this.state;
-        const indexOfLastTodo = currentPage * itemsPerPage;
-        const indexOfFirstTodo = indexOfLastTodo - itemsPerPage;
-        const currentPageitems = itemsPresent.slice(indexOfFirstTodo, indexOfLastTodo);
-        const pageNumbers = [];
-        for (let i = 1; i <= Math.ceil(itemsPresent.length / itemsPerPage); i++) {
-            pageNumbers.push(i);
+                }
+            });
         }
-        pageNumbers.map(number => {
-            if (number == 1) {
-                renderPageNumbers.push(
-                    <li class="page-item active" id={number}><a class="page-link" id={number} key={number} onClick={this.handleClick} style={{ color: 'black' }}> {number}</a></li>
-                )
-            } else {
-                renderPageNumbers.push(
-                    <li class="page-item" id={number}><a class="page-link" id={number} key={number} onClick={this.handleClick} style={{ color: 'black' }}> {number}</a></li>
-                )
+        if (this.state.itemsPresent) {
+            const { itemsPresent, currentPage, itemsPerPage } = this.state;
+            const indexOfLastTodo = currentPage * itemsPerPage;
+            const indexOfFirstTodo = indexOfLastTodo - itemsPerPage;
+            currentPageitems = itemsPresent.slice(indexOfFirstTodo, indexOfLastTodo);
+            const pageNumbers = [];
+            for (let i = 1; i <= Math.ceil(itemsPresent.length / itemsPerPage); i++) {
+                pageNumbers.push(i);
             }
+            pageNumbers.map(number => {
+                if (number == 1) {
+                    renderPageNumbers.push(
+                        <li class="page-item active" id={number}><a class="page-link" id={number} key={number} onClick={this.handleClick} style={{ color: 'black' }}> {number}</a></li>
+                    )
+                } else {
+                    renderPageNumbers.push(
+                        <li class="page-item" id={number}><a class="page-link" id={number} key={number} onClick={this.handleClick} style={{ color: 'black' }}> {number}</a></li>
+                    )
+                }
 
 
-        });
+            });
+        }
+
 
         if (this.state.editSection == true) {
             buttonSection = (<div class="row">
@@ -488,14 +315,14 @@ class MenuOwner extends Component {
                 <div class="col-md-4"><button type="button" onClick={this.updateItemHandler} class="btn btn-success btn-md">Update Item</button></div>
             </div>)
             ItemHeading = "Edit Item"
-            if(this.state.filePreview){
-                image=(<div><input type="file" accept="image/*" onChange={this.pictureChangeHandler} name ="myImage" id="preview" class="custom-file-input"/><div class="img" style={{paddingTop:'20px'}}><img style={{ width: "50%" }} src={this.state.filePreview}  class="rounded"/></div></div>)
+            if (this.state.filePreview) {
+                image = (<div><input type="file" accept="image/*" onChange={this.pictureChangeHandler} name="myImage" id="preview" class="custom-file-input" /><div class="img" style={{ paddingTop: '20px' }}><img style={{ width: "50%" }} src={this.state.filePreview} class="rounded" /></div></div>)
 
-            }else if(this.state.file){
-                image=(<div><input type="file" accept="image/*" onChange={this.pictureChangeHandler} name ="myImage"id="preview" class="custom-file-input"/><div class="img" style={{paddingTop:'20px'}}><img style={{ width: "50%" }} src={this.state.file}  class="rounded"/></div></div>)
+            } else if (this.state.file) {
+                image = (<div><input type="file" accept="image/*" onChange={this.pictureChangeHandler} name="myImage" id="preview" class="custom-file-input" /><div class="img" style={{ paddingTop: '20px' }}><img style={{ width: "50%" }} src={this.state.file} class="rounded" /></div></div>)
 
-            }else{
-                image=(<div><input type="file" accept="image/*" onChange={this.pictureChangeHandler} name ="myImage"id="preview" class="custom-file-input"/><div class="img" style={{paddingTop:'20px'}}><img style={{ width: "50%" }} src="//placehold.it/500x300"  class="rounded"/></div></div>)
+            } else {
+                image = (<div><input type="file" accept="image/*" onChange={this.pictureChangeHandler} name="myImage" id="preview" class="custom-file-input" /><div class="img" style={{ paddingTop: '20px' }}><img style={{ width: "50%" }} src="//placehold.it/500x300" class="rounded" /></div></div>)
 
             }
         } else {
@@ -507,34 +334,34 @@ class MenuOwner extends Component {
                 <div class="col-md-4"></div>
             </div>)
             ItemHeading = "Add Item"
-            if(this.state.filePreview){
-                image=(<div><input type="file" accept="image/*" onChange={this.pictureChangeHandler} name ="myImage" id="preview" class="custom-file-input"/><div class="img" style={{paddingTop:'20px'}}><img style={{ width: "80%" }} src={this.state.filePreview}  class="rounded"/></div></div>)
+            if (this.state.filePreview) {
+                image = (<div><input type="file" accept="image/*" onChange={this.pictureChangeHandler} name="myImage" id="preview" class="custom-file-input" /><div class="img" style={{ paddingTop: '20px' }}><img style={{ width: "80%" }} src={this.state.filePreview} class="rounded" /></div></div>)
 
-            }else{
-                image=(<div><input type="file" accept="image/*" onChange={this.pictureChangeHandler} name ="myImage"id="preview" class="custom-file-input"/><div class="img" style={{paddingTop:'20px'}}><img style={{ width: "80%" }} src="//placehold.it/500x300"  class="rounded"/></div></div>)
+            } else {
+                image = (<div><input type="file" accept="image/*" onChange={this.pictureChangeHandler} name="myImage" id="preview" class="custom-file-input" /><div class="img" style={{ paddingTop: '20px' }}><img style={{ width: "80%" }} src="//placehold.it/500x300" class="rounded" /></div></div>)
 
             }
         }
 
-        if (this.state.sectionsPresent.length) {
+        if (this.state.sectionsPresent) {
             this.state.sectionsPresent.map((section) => {
-                var flag = 0;
+                let flag = 0;
                 array.push(<div>
                     <div class="row" style={{ fontSize: "20px", fontWeight: "900" }}>
-                    <div class="col-md-1" style={{textAlign:'right'}}><span class="glyphicon glyphicon-pencil" id={section._id} onClick={this.editSectionModal}></span> </div>
+                        <div class="col-md-1" style={{ textAlign: 'right' }}><span class="glyphicon glyphicon-pencil" id={section._id} onClick={this.editSectionModal}></span> </div>
                         <div class="col-md-11" style={{ alignItems: "right" }}>{section.menuSectionName} </div>
                     </div>
                     <br></br>
-                    
+
                 </div>)
                 currentPageitems.filter((item) => {
 
                     if (item.sectionId == section._id) {
                         flag = 1;
                         array.push(
-                            <div class="row embossed-heavy" style={{ marginLeft: '10px', marginRight: '200px', marginBottom: '10px', paddingBottom: '10px', fontWeight: 'bold', backgroundColor: 'white',paddingTop:'10px' }}>
+                            <div class="row embossed-heavy" style={{ marginLeft: '10px', marginRight: '200px', marginBottom: '10px', paddingBottom: '10px', fontWeight: 'bold', backgroundColor: 'white', paddingTop: '10px' }}>
                                 <span class="border border-dark">
-                                    <div class="col-md-5"><img style={{ width: "50%" }} src={item.itemImage}  class="rounded"/></div>
+                                    <div class="col-md-5"><img style={{ width: "50%" }} src={item.itemImage} class="rounded" /></div>
                                     <div class="col-md-5">
                                         <div class="row" style={{ fontSize: "15px", fontWeight: "600", color: "blue" }}>
                                             <p onClick={this.editItemModal} id={item._id}>{item.ItemName}</p></div>
@@ -552,9 +379,6 @@ class MenuOwner extends Component {
                 })
                 if (flag == 0) {
                     array.pop();
-                    // array.push(<div class="row" style={{ marginBottom: '25px', paddingTop: '10px', paddingBottom: '10px', fontSize: "15px", fontWeight: "600", alignItems: "center" }}>
-                    //     <div class="col-md-4"></div><div class="col-md-4">No items here !!!</div><div class="col-md-4"></div>
-                    // </div>)
                 }
             })
         } else {
@@ -568,7 +392,7 @@ class MenuOwner extends Component {
         } else if (this.state.errorFlag == "Success") {
             messageDisplay = (<ul class="li alert alert-success">Successfully Updated !!!</ul>);
         }
-        var addDropDown = "";
+        let addDropDown = "";
 
         if (this.state.addItem == true) {
             addDropDown = (
@@ -589,7 +413,7 @@ class MenuOwner extends Component {
 
                 }))
         }
-        
+
         return (
             <div>
                 {redirectVar}
@@ -628,7 +452,7 @@ class MenuOwner extends Component {
                     <div class="col-sm-5"></div>
                     <div class="col-sm-5" style={{ marginTop: '0px' }}></div>
                 </div>
-                <div class="modal" id="modalItem" >
+                <div class="modal modal-backdrop" id="modalItem" >
                     <div class="modal-dialog">
                         <div class="modal-content">
 
@@ -653,25 +477,22 @@ class MenuOwner extends Component {
                                             <div class="row">Description</div>
                                             <div class="row signup" style={{ paddingBottom: "15px" }}><input value={this.state.itemDesc} onChange={this.itemDescChangeHandler} type="text" class="form-control" name="itemDesc" /></div>
                                         </div>
-                                    {/* </div> */}
-                                    {/* <div class="col-md-6">{image}</div> */}
-                                {/* </div> */}
-                                {/* <div class="row" style={{ paddingLeft: "25px" }}> */}
-                                <div class="row">
-                                    <div class="row" style={{ paddingBottom: "5px" }}>
-                                        Sections
+
+                                        <div class="row">
+                                            <div class="row" style={{ paddingBottom: "5px" }}>
+                                                Sections
                                 </div>
-                                    <div class="row" style={{ paddingBottom: "15px" }}>
-                                        <select onChange={this.itemSectionChangeHandler}>
-                                            <option value={0}>select</option>
-                                            {addDropDown}
-                                        </select>
+                                            <div class="row" style={{ paddingBottom: "15px" }}>
+                                                <select onChange={this.itemSectionChangeHandler}>
+                                                    <option value={0}>select</option>
+                                                    {addDropDown}
+                                                </select>
+                                            </div>
+                                        </div>
                                     </div>
-                                    </div>
-                                </div>
 
 
-                                <div class="col-md-6">{image}</div>
+                                    <div class="col-md-6">{image}</div>
                                 </div>
                                 <div class="row" style={{ paddingLeft: "25px", paddingRight: "25px" }}>
                                     <div class="row" style={{ paddingBottom: "5px" }}>
@@ -685,8 +506,8 @@ class MenuOwner extends Component {
 
                             <div class="modal-footer">
                                 {buttonItem}
-                                <div class="row" style={{ marginTop: "20px" }}>
-                                    {messageDisplay}
+                                <div class="row" style={{ marginTop: "20px", textAlign: 'center' }}>
+                                    {alertMessage}
 
                                 </div>
 
@@ -696,7 +517,7 @@ class MenuOwner extends Component {
                         </div>
                     </div>
                 </div>
-                <div class="modal" id="modalAddSection" >
+                <div class="modal modal-backdrop" id="modalAddSection" >
                     <div class="modal-dialog">
                         <div class="modal-content">
 
@@ -730,8 +551,8 @@ class MenuOwner extends Component {
 
                             <div class="modal-footer">
                                 {buttonSection}
-                                <div class="row" style={{ marginTop: "20px" }}>
-                                    {messageDisplay}
+                                <div class="row" style={{ marginTop: "20px", textAlign: "center" }}>
+                                    {alertMessage}
 
                                 </div>
 
@@ -756,7 +577,7 @@ class MenuOwner extends Component {
                             </div>
 
                             <div class="modal-body">
-{itemsToDelete}
+                                {itemsToDelete}
 
                             </div>
 
@@ -781,5 +602,23 @@ class MenuOwner extends Component {
         )
     }
 }
-//export Login Component
-export default MenuOwner;
+function mapState(state) {
+    const { owner, alert } = state;
+    return { owner, alert };
+}
+const actionCreators = {
+    fetchSections: ownerActions.getSections,
+    fetchItems: ownerActions.getItems,
+    addSection: ownerActions.addSection,
+    clearAlerts: alertActions.clear,
+    updateSection: ownerActions.updateSection,
+    deleteItem: ownerActions.deleteItem,
+    addItem: ownerActions.addItem,
+    addItemImageAndItem: ownerActions.addItemImageAndItem,
+    updateItem:ownerActions.updateItem,
+    updateItemAndImage:ownerActions.updateItemAndImage,
+    deleteSection:ownerActions.deleteSection
+};
+
+const connectedMenuOwner = connect(mapState, actionCreators)(MenuOwner);
+export { connectedMenuOwner as MenuOwner };

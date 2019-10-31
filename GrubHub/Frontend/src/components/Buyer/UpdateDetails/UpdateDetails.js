@@ -1,10 +1,10 @@
 import React, { Component } from 'react';
 import cookie from 'js-cookie';
-import axios from 'axios';
 import { Redirect } from 'react-router';
-import { address } from '../../../constant';
 import '../../../App.css';
-
+import { userActions } from '../../../redux/actions/user.actions';
+import { alertActions } from '../../../redux/actions/alert.actions';
+import { connect } from 'react-redux';
 
 class UpdateDetails extends Component {
     constructor(props) {
@@ -17,12 +17,10 @@ class UpdateDetails extends Component {
             phone: "",
             filePreview: null,
             errorMessage: [],
-            authFlag: true,
             readOnly: true,
             ID: "",
             errorFlag: "No update",
-            address: "",
-            authFlag:true
+            address: ""
         }
         this.firstNameChangeHandler = this.firstNameChangeHandler.bind(this);
         this.lastNameChangeHandler = this.lastNameChangeHandler.bind(this);
@@ -34,36 +32,23 @@ class UpdateDetails extends Component {
         this.uploadImageHandler = this.uploadImageHandler.bind(this)
 
     }
+    componentWillReceiveProps(newProps) {
+        let userDetails = newProps.users.details;
+        this.setState({
+            firstName: userDetails.buyerFirstName,
+            lastName: userDetails.buyerLastName,
+            email: userDetails.buyerEmail,
+            phone: userDetails.buyerPhone,
+            image: userDetails.buyerImage,
+            ID: userDetails._id,
+            address: userDetails.buyerAddress,
+            file: userDetails.buyerImage
+        })
 
-
+    }
+    componentWillUpdate
     componentDidMount() {
-        axios.get(address + '/users/details/' + sessionStorage.getItem("BuyerId"),{   
-            headers: {Authorization: 'JWT '+cookie.get("token")}
-        }).then(response => {
-                if (response.status === 200) {
-                    this.setState({
-                        firstName: response.data.buyerFirstName,
-                        lastName: response.data.buyerLastName,
-                        email: response.data.buyerEmail,
-                        phone: response.data.buyerPhone,
-                        image: response.data.buyerImage,
-                        ID: response.data._id,
-                        address: response.data.buyerAddress,
-                        file: response.data.buyerImage
-                    })
-                }
-                else if (response.status === 201) {
-                    this.setState({
-                        errorFlag: "Some error",
-                        errorMessage: response.data
-                    })
-                }
-            }).catch(error => {
-                sessionStorage.clear();
-                localStorage.clear();
-                cookie.remove("token");
-                this.setState({ authFlag: false })
-            });
+        this.props.fetchUserDetails();
     }
     uploadImageHandler = (e) => {
         if (this.state.file) {
@@ -72,25 +57,15 @@ class UpdateDetails extends Component {
             formData.append('myImage', this.state.file, this.state.ID);
             const config = {
                 headers: {
-                    Authorization: 'JWT '+cookie.get("token"),
+                    Authorization: 'JWT ' + cookie.get("token"),
                     'content-type': 'multipart/form-data'
                 }
             };
-            axios.post(address + "/users/upload/photo", formData, config)
-                .then((response) => {
-                     if(response.status==200){
-                        this.setState({ errorFlag: 'Success' })
-                        setTimeout(() => {
-                            this.setState({ errorFlag: '' })
-                        }, 2000);
-                    }
-                    
-                }).catch(error => {
-                    sessionStorage.clear();
-                    localStorage.clear();
-                    cookie.remove("token");
-                    this.setState({ authFlag: false })
-                })
+            this.props.uploadImageUser(formData, config);
+            setTimeout(() => {
+                window.location.reload();
+            }, 3000);
+
         }
 
     }
@@ -140,108 +115,90 @@ class UpdateDetails extends Component {
 
     updateHandler = (e) => {
         e.preventDefault();
-        const data = { firstName: this.state.firstName, lastName: this.state.lastName, email: this.state.email, phone: this.state.phone, ID: this.state.ID, address: this.state.address };
-        axios.defaults.withCredentials = true;
-
+        const data = { firstName: this.state.firstName, lastName: this.state.lastName, email: this.state.email, phone: this.state.phone, ID: this.state.ID, address: this.state.address, file: this.state.file };
         if (this.state.readOnly == false) {
-            axios.post(address + '/users/update', data,{   
-                headers: {Authorization: 'JWT '+cookie.get("token")}
-            }).then(response => {
-                    if (response.status === 200) {
-                        sessionStorage.setItem("FirstName", this.state.firstName);
-                        sessionStorage.setItem("LastName", this.state.lastName);
-                        var bag = localStorage.getItem(sessionStorage.getItem("username")) ? JSON.parse(localStorage.getItem(sessionStorage.getItem("username"))) : []
-                        sessionStorage.setItem("username", this.state.email);
-                        localStorage.setItem(sessionStorage.getItem("username"), JSON.stringify(bag));
+            this.props.updateUserDetails(data);
 
-                        this.setState({
-                            errorFlag: "Success"
-                        })
-
-                        setTimeout(() => {
-                            window.location.reload();
-                        }, 500);
-
-                    }
-                    else if (response.status === 201) {
-                        this.setState({
-                            errorFlag: "Some error",
-                            errorMessage: response.data
-                        })
-                    }
-                }).catch(error => {
-                    sessionStorage.clear();
-                    localStorage.clear();
-                    cookie.remove("token");
-                    this.setState({ authFlag: false })
-                });
         }
     }
 
     render() {
-        let redirectVar = null;
+        let redirectVar = "";
         let image = <div class="img" style={{ paddingTop: '20px' }}><img style={{ width: "80%" }} src="//placehold.it/5000x3000" class="img-circle" /></div>
         let uploadImage = ""
-        if (!this.state.authFlag) {
+        let createDisplay = "";
+        let alertMessage = [];
+        if (!cookie.get("token")) {
             redirectVar = <Redirect to="/login" />
-        }
-        let messageDisplay = "";
-        if (this.state.errorFlag == "Some error") {
-            messageDisplay = (this.state.errorMessage.map((error) => {
-                return (<li class=" li alert-danger">{error.msg}</li>)
-            }))
-        } else if (this.state.errorFlag == "Success") {
-            messageDisplay = (<ul class="li alert alert-success">Successfully Updated !!!</ul>);
-        }
+        } else {
 
-        if (this.state.filePreview) {
-            image = <div class="img" style={{ paddingBottom: '20px' }}><img style={{ width: "80%" }} src={this.state.filePreview} class="img-circle" onChange={this.pictureChangeHandler} /></div>
-            uploadImage = <button onClick={this.uploadImageHandler}>Upload Image</button>
+            const { alert } = this.props;
+           
+            if (alert.message) {
+                if (alert.type == "danger") {
+                    alert.message.forEach(element => {
+                        alertMessage.push(<div class="alert alert-danger">{element.msg}</div>)
+                    });
+                } else if (alert.type == "success") {
+                    alert.message.forEach(element => {
+                        alertMessage.push(<div class="alert alert-success">{element.msg}</div>)
+                    });
+                    setTimeout(() => {
+                        window.location.reload();
+                    }, 1000);
+                }
+            }
 
-        } else if (this.state.file) {
-            image = <div class="img" style={{ paddingBottom: '20px' }}><img style={{ width: "80%" }} src={this.state.file} class="img-circle" onChange={this.pictureChangeHandler} /></div>
-        }
-        let createDisplay = (
-            <div>
+            if (this.state.filePreview) {
+                image = <div class="img" style={{ paddingBottom: '20px' }}><img style={{ width: "80%" }} src={this.state.filePreview} class="img-circle" onChange={this.pictureChangeHandler} /></div>
+                uploadImage = <button onClick={this.uploadImageHandler}>Upload Image</button>
 
-                <div class="row" style={{ paddingBottom: '50px', paddingTop: '50px' }}>
-                    <a href="#" onClick={this.readOnlyHandler} class="btn btn-info btn-sm">
-                        <span class="glyphicon glyphicon-edit"></span> Edit</a>
-                </div>
-                <div class="row" style={{ paddingBottom: '10px' }}>
-                    <div class="col-md-6" style={{ paddingLeft: '50px' }}>
-                        <div class="col-md-6"><input type="file" accept="image/*" onChange={this.pictureChangeHandler} name="myImage" class="custom-file-input" /></div>
-                        <div class="col-md-6">{uploadImage}</div>
-                        {image}
-                    </div>
-                </div>
-                <div class="row" style={{ paddingBottom: '0px' }}>
-                    <div class="row" style={{ paddingBottom: '10px' }}>
-                        <div class="col-md-4 signup">First Name</div>
-                        <div class="col-md-4 signup">Last Name</div>
+            } else if (this.state.file) {
+                image = <div class="img" style={{ paddingBottom: '20px' }}><img style={{ width: "80%" }} src={this.state.file} class="img-circle" onChange={this.pictureChangeHandler} /></div>
+            }
+            createDisplay = (
+                <div>
+
+                    <div class="row" style={{ paddingBottom: '50px', paddingTop: '50px' }}>
+                        <a href="#" onClick={this.readOnlyHandler} class="btn btn-info btn-sm">
+                            <span class="glyphicon glyphicon-edit"></span> Edit</a>
                     </div>
                     <div class="row" style={{ paddingBottom: '10px' }}>
-                        <div class="col-md-4 signup">
-                            <input value={this.state.firstName} onChange={this.firstNameChangeHandler} type="text" class="form-control" name="firstName" readOnly={this.state.readOnly} />
+                        <div class="col-md-6" style={{ paddingLeft: '50px' }}>
+                            <div class="col-md-6"><input type="file" accept="image/*" onChange={this.pictureChangeHandler} name="myImage" class="custom-file-input" /></div>
+                            <div class="col-md-6">{uploadImage}</div>
+                            {image}
                         </div>
-                        <div class="col-md-4 signup"><input value={this.state.lastName} onChange={this.lastNameChangeHandler} type="text" class="form-control" name="lastName" readOnly={this.state.readOnly} /></div>
                     </div>
-                </div>
-                <div class="row" style={{ paddingBottom: '10px' }}>
-                    <div class="col-md-6">
-                        <div class="row" style={{ paddingBottom: '10px' }}>Email</div>
-                        <div class="row" style={{ paddingBottom: '10px' }}><input onChange={this.emailChangeHandler} value={this.state.email} type="text" class="form-control email" name="email" readOnly={this.state.readOnly} /></div>
-                        <div class="row" style={{ paddingBottom: '10px' }}>Phone</div>
-                        <div class="row" style={{ paddingBottom: '10px' }}><input onChange={this.phoneChangeHandler} value={this.state.phone} type="number" class="form-control email" name="phone" readOnly={this.state.readOnly} />
+                    <div class="row" style={{ paddingBottom: '0px' }}>
+                        <div class="row" style={{ paddingBottom: '10px' }}>
+                            <div class="col-md-4 signup">First Name</div>
+                            <div class="col-md-4 signup">Last Name</div>
                         </div>
-                        <div class="row" style={{ paddingBottom: '10px' }}>Address</div>
-                        <div class="row" style={{ paddingBottom: '10px' }}><input onChange={this.addressChangeHandler} value={this.state.address} type="text" class="form-control email" name="address" readOnly={this.state.readOnly} /></div>
+                        <div class="row" style={{ paddingBottom: '10px' }}>
+                            <div class="col-md-4 signup">
+                                <input value={this.state.firstName} onChange={this.firstNameChangeHandler} type="text" class="form-control" name="firstName" readOnly={this.state.readOnly} />
+                            </div>
+                            <div class="col-md-4 signup"><input value={this.state.lastName} onChange={this.lastNameChangeHandler} type="text" class="form-control" name="lastName" readOnly={this.state.readOnly} /></div>
+                        </div>
                     </div>
+                    <div class="row" style={{ paddingBottom: '10px' }}>
+                        <div class="col-md-6">
+                            <div class="row" style={{ paddingBottom: '10px' }}>Email</div>
+                            <div class="row" style={{ paddingBottom: '10px' }}><input onChange={this.emailChangeHandler} value={this.state.email} type="text" class="form-control email" name="email" readOnly={this.state.readOnly} /></div>
+                            <div class="row" style={{ paddingBottom: '10px' }}>Phone</div>
+                            <div class="row" style={{ paddingBottom: '10px' }}><input onChange={this.phoneChangeHandler} value={this.state.phone} type="number" class="form-control email" name="phone" readOnly={this.state.readOnly} />
+                            </div>
+                            <div class="row" style={{ paddingBottom: '10px' }}>Address</div>
+                            <div class="row" style={{ paddingBottom: '10px' }}><input onChange={this.addressChangeHandler} value={this.state.address} type="text" class="form-control email" name="address" readOnly={this.state.readOnly} /></div>
+                        </div>
 
+                    </div>
+                    <div class="row"><button type="button" onClick={this.updateHandler} class="btn btn-success btn-lg col-md-6">Update</button></div>
                 </div>
-                <div class="row"><button type="button" onClick={this.updateHandler} class="btn btn-success btn-lg col-md-6">Update</button></div>
-            </div>
-        )
+            )
+        }
+
 
 
         return (
@@ -252,11 +209,22 @@ class UpdateDetails extends Component {
 
                     <div class="col-md-8">   {createDisplay}</div>
                 </div>
-                <div class="row" style={{ paddingLeft: '30px', marginTop: '5px', textAlign: 'center' }}> {messageDisplay}</div>
+                <div class="row" style={{ paddingLeft: '30px', marginTop: '5px', textAlign: 'center' }}> {alertMessage}</div>
 
             </div>
         )
     }
 }
+function mapState(state) {
+    const { users, alert } = state;
+    return { users, alert };
+}
+const actionCreators = {
+    fetchUserDetails: userActions.fetchUserDetails,
+    uploadImageUser: userActions.uploadUserPhoto,
+    clearAlerts: alertActions.clear,
+    updateUserDetails: userActions.updateUserDetails
+};
 
-export default UpdateDetails;
+const connectedUpdateDetailsPage = connect(mapState, actionCreators)(UpdateDetails);
+export { connectedUpdateDetailsPage as UpdateDetails };

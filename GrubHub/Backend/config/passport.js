@@ -1,7 +1,7 @@
 const jwtSecret = 'mahalasa_narayani';
 const passport = require('passport');
 const LocalStrategy = require('passport-local').Strategy;
-var pool = require('./Base.js');
+let pool = require('./Base.js');
 const bcrypt = require('bcrypt');
 const JWTstrategy = require('passport-jwt').Strategy;
 const ExtractJWT = require('passport-jwt').ExtractJwt;
@@ -29,19 +29,19 @@ passport.use('login',
                     return done(null, false);
                 }
                 else if (post == null) {
-                    var message = [];
-                    var errors = { msg: "Unregistered User!" };
+                    let message = [];
+                    let errors = { msg: " Unregistered User!" };
                     message.push(errors);
                     return done(message, false);
                 } else {
                     bcrypt.compare(password, post.buyerPassword, function (err, result) {
     
                         if (result) {
-                            var user = { username: username, id: post._id }
+                            let user = { username: username, id: post._id }
                             return done(null, user);
                         } else {
-                            var message = [];
-                            var errors = { msg: " Invalid Password!" };
+                            let message = [];
+                            let errors = { msg: " Invalid Password!" };
                             message.push(errors);
                             return done(message, false);
                         }
@@ -62,19 +62,19 @@ passport.use('loginOwner',
                     return done(null, false);
                 }
                 else if (post == null) {
-                    var message = [];
-                    var errors = { msg: "Unregistered User!" };
+                    let message = [];
+                    let errors = { msg: "Unregistered User!" };
                     message.push(errors);
                     return done(message, false);
                 } else {
                     bcrypt.compare(password, post.ownerPassword, function (err, result) {
     
                         if (result) {
-                            var user = { username: username, id: post._id }
+                            let user = { username: username, id: post._id }
                             return done(null, user);
                         } else {
-                            var message = [];
-                            var errors = { msg: " Invalid Password!" };
+                            let message = [];
+                            let errors = { msg: " Invalid Password!" };
                             message.push(errors);
                             return done(message, false);
                         }
@@ -109,8 +109,8 @@ passport.use('signup',
                 });
                 newBuyer.save((err, buyer) => {
                     if (err) {
-                        var message = [];
-                        var errors = { msg: "You already have an account!" };
+                        let message = [];
+                        let errors = { msg: "You already have an account!" };
                         message.push(errors);
                         done(message, false, null);
                     } else if (buyer == null) {
@@ -160,8 +160,8 @@ passport.use('signupOwner',
                 });
                 newOwner.save((err, owner) => {
                     if (err) {
-                        var message = [];
-                        var errors = { msg: "You already have an account!" };
+                        let message = [];
+                        let errors = { msg: "You already have an account!" };
                         message.push(errors);
                         done(message, false, null);
                     } else if (owner == null) {

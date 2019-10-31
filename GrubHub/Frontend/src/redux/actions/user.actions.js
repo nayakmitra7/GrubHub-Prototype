@@ -5,7 +5,8 @@ import { alertActions } from '../actions/alert.actions';
 import cookie from 'js-cookie';
 
 export const userActions = {
-    login, signUp, updateProfile, fetchProfile, fetchBasic, fetchPastOrder, fetchUpcomingOrder, sendMessage,fetchMessageSent,fetchMessageReceived
+    login, signUp, updateProfile, fetchBasic, fetchPastOrder, fetchUpcomingOrder, sendMessage, fetchMessageSent, fetchMessageReceived,
+    fetchUserDetails, uploadUserPhoto, updateUserDetails,fetchRestaurants,fetchSections,fetchItems,placeOrder
 };
 
 function login(username, password) {
@@ -34,10 +35,10 @@ function fetchBasic(username) {
                 dispatch(success(username));
                 sessionStorage.setItem("Address", response.data.buyerAddress);
                 sessionStorage.setItem("FirstName", response.data.buyerFirstName);
+                sessionStorage.setItem("LastName", response.data.buyerLastName);
                 sessionStorage.setItem("BuyerId", response.data._id);
             }).catch((error) => {
                 dispatch(failure(JSON.stringify(error)));
-                dispatch(alertActions.error(error));
             })
     };
     function request(user) { return { type: userConstants.FETCH_BASIC_REQUEST, user } }
@@ -53,7 +54,6 @@ function fetchPastOrder() {
             }).catch((error) => {
                 dispatch(failure(JSON.stringify(error)));
                 sessionStorage.clear();
-                localStorage.clear();
                 cookie.remove("token");
                 history.push("/login")
             })
@@ -71,7 +71,6 @@ function fetchUpcomingOrder() {
             }).catch((error) => {
                 dispatch(failure(JSON.stringify(error)));
                 sessionStorage.clear();
-                localStorage.clear();
                 cookie.remove("token");
                 history.push("/login")
             })
@@ -81,7 +80,7 @@ function fetchUpcomingOrder() {
     function failure(error) { return { type: userConstants.FETCH_UPCOMING_ORDER_FAILURE, error } }
 }
 function sendMessage(data) {
-    var details = data;
+    let details = data;
     return dispatch => {
         dispatch(request());
         userService.sendMessage(details)
@@ -90,7 +89,6 @@ function sendMessage(data) {
             }).catch((error) => {
                 dispatch(failure(JSON.stringify(error)));
                 sessionStorage.clear();
-                localStorage.clear();
                 cookie.remove("token");
                 history.push("/login")
             })
@@ -108,13 +106,12 @@ function fetchMessageSent() {
             }).catch((error) => {
                 dispatch(failure(JSON.stringify(error)));
                 sessionStorage.clear();
-                localStorage.clear();
                 cookie.remove("token");
                 history.push("/login")
             })
     };
     function request() { return { type: userConstants.FETCH_SENT_MESSAGE_REQUEST } }
-    function success(message) { return { type: userConstants.FETCH_SENT_MESSAGE_SUCCESS,message } }
+    function success(message) { return { type: userConstants.FETCH_SENT_MESSAGE_SUCCESS, message } }
     function failure(error) { return { type: userConstants.FETCH_SENT_MESSAGE_FAILURE, error } }
 }
 function fetchMessageReceived() {
@@ -126,45 +123,102 @@ function fetchMessageReceived() {
             }).catch((error) => {
                 dispatch(failure(JSON.stringify(error)));
                 sessionStorage.clear();
-                localStorage.clear();
                 cookie.remove("token");
                 history.push("/login")
             })
     };
     function request() { return { type: userConstants.FETCH_RECEIVED_MESSAGE_REQUEST } }
-    function success(message) { return { type: userConstants.FETCH_RECEIVED_MESSAGE_SUCCESS,message } }
+    function success(message) { return { type: userConstants.FETCH_RECEIVED_MESSAGE_SUCCESS, message } }
     function failure(error) { return { type: userConstants.FETCH_RECEIVED_MESSAGE_FAILURE, error } }
 }
+function uploadUserPhoto(formData, config) {
+    return dispatch => {
+        dispatch(request());
+        userService.uploadUserPhoto(formData, config)
+            .then((response) => {
+                dispatch(success(response.data));
+                let successMessage = [];
+                successMessage.push({ msg: "Successfully Updated" })
+                dispatch(alertActions.success(successMessage));
+            }).catch((error) => {
+                dispatch(failure(JSON.stringify(error)));
+                sessionStorage.clear();
+                cookie.remove("token");
+                history.push("/login")
+            })
+    };
+    function request() { return { type: userConstants.UPLOAD_IMAGE_REQUEST } }
+    function success(message) { return { type: userConstants.UPLOAD_IMAGE_SUCCESS, message } }
+    function failure(error) { return { type: userConstants.UPLOAD_IMAGE_FAILURE, error } }
+}
+
 function signUp(data) {
-    var username = data.username;
+    let username = data.username;
     return dispatch => {
         dispatch(request({ username }));
 
         userService.signUp(data)
-            .then(() => {
-                console.log("success")
+            .then((response) => {
+                sessionStorage.setItem("FirstName",response.data.firstName)
+                sessionStorage.setItem("LastName",response.data.lastName)
+                sessionStorage.setItem("BuyerId",response.data.id)
+                sessionStorage.setItem("Address",response.data.address)
+                cookie.set("token",response.data.tokens);
                 dispatch(success(username));
                 history.push("/HomePage");
             }).catch((error) => {
-                console.log(error)
-                dispatch(failure(JSON.stringify(error)));
-                dispatch(alertActions.error(error));
+                if (error.status == 201) {
+                    dispatch(alertActions.error(error.data));
+                } else {
+                    sessionStorage.clear();
+                    cookie.remove("token");
+                    history.push("/login")
+                }
             })
     };
     function request(username) { return { type: userConstants.SIGNUP_REQUEST, username } }
-    function success(username) { return { type: userConstants.SIGNUP_SUCCESS, username } }
+    function success(buyer) { return { type: userConstants.SIGNUP_SUCCESS, buyer } }
     function failure(error) { return { type: userConstants.SIGNUP_FAILURE, error } }
 }
+function updateUserDetails(data) {
+    let username = data.email;
+    return dispatch => {
+        dispatch(request({ username }));
+
+        userService.updateUserDetails(data)
+            .then((response) => {
+                sessionStorage.setItem("FirstName", response.data.buyerFirstName);
+                sessionStorage.setItem("LastName", response.data.buyerLastName);
+                dispatch(success(response.data));
+                let successMessage = [];
+                successMessage.push({ msg: "Successfully Updated" })
+                dispatch(alertActions.success(successMessage));
+            }).catch((error) => {
+                if (error.status == 201) {
+                    let data1 = { _id: data.ID, buyerFirstName: data.firstName, buyerLastName: data.lastName, buyerEmail: data.email, buyerPhone: data.phone, buyerImage: data.file, buyerAddress: data.address }
+                    dispatch(failure(data1));
+                    dispatch(alertActions.error(error.data));
+                } else {
+                    sessionStorage.clear();
+                    cookie.remove("token");
+                    history.push("/login")
+                }
+
+            })
+    };
+    function request(username) { return { type: userConstants.UPDATE_REQUEST, username } }
+    function success(details) { return { type: userConstants.UPDATE_SUCCESS, details } }
+    function failure(details) { return { type: userConstants.UPDATE_FAILURE, details } }
+}
 function updateProfile(data) {
-    var username = data.email;
+    let username = data.email;
     return dispatch => {
         dispatch(request({ username }));
 
         userService.updateProfile(data)
             .then((response) => {
-                console.log("success")
                 dispatch(success(response));
-                var successMessage = [];
+                let successMessage = [];
                 successMessage.push({ msg: "Successfully Updated" })
                 dispatch(alertActions.success(successMessage));
             }).catch((error) => {
@@ -177,22 +231,92 @@ function updateProfile(data) {
     function failure(user) { return { type: userConstants.UPDATE_FAILURE, user } }
 }
 
-function fetchProfile(data) {
-    var username = data.username
+function fetchUserDetails() {
     return dispatch => {
-        dispatch(request({ username }));
-
-        userService.fetchProfile(data)
+        dispatch(request());
+        userService.fetchUserDetails()
             .then((response) => {
-                console.log("success")
-                dispatch(success(response));
+                dispatch(success(response.data));
             }).catch((error) => {
-                console.log(error)
-                dispatch(failure(JSON.stringify(error)));
-                dispatch(alertActions.error(error));
+                dispatch(failure(JSON.stringify(error.data)));
+                sessionStorage.clear();
+                cookie.remove("token");
+                history.push("/login")
             })
     };
-    function request(username) { return { type: userConstants.FETCH_PROFILE_REQUEST, username } }
-    function success(user) { return { type: userConstants.FETCH_PROFILE_SUCCESS, user } }
-    function failure(error) { return { type: userConstants.FETCH_PROFILE_FAILURE, error } }
+    function request() { return { type: userConstants.FETCH_DETAILS_REQUEST } }
+    function success(details) { return { type: userConstants.FETCH_DETAILS_SUCCESS, details } }
+    function failure(error) { return { type: userConstants.FETCH_DETAILS_FAILURE, error } }
+}
+
+function fetchRestaurants(itemSearched) {
+    return dispatch => {
+        dispatch(request());
+        userService.fetchRestaurants(itemSearched)
+            .then((response) => {
+                dispatch(success(response.data));
+            }).catch((error) => {
+                dispatch(failure(JSON.stringify(error.data)));
+                sessionStorage.clear();
+                cookie.remove("token");
+                history.push("/login")
+            })
+    };
+    function request() { return { type: userConstants.FETCH_RESTAURANT_REQUEST } }
+    function success(restaurants) { return { type: userConstants.FETCH_RESTAURANT_SUCCESS, restaurants } }
+    function failure(error) { return { type: userConstants.FETCH_DETAILS_FAILURE, error } }
+}
+
+function fetchSections(restaurantId) {
+    return dispatch => {
+        dispatch(request());
+        userService.fetchSections(restaurantId)
+            .then((response) => {
+                dispatch(success(response.data));
+            }).catch((error) => {
+                dispatch(failure(JSON.stringify(error.data)));
+                sessionStorage.clear();
+                cookie.remove("token");
+                history.push("/login")
+            })
+    };
+    function request() { return { type: userConstants.FETCH_SECTION_REQUEST } }
+    function success(sections) { return { type: userConstants.FETCH_SECTION_SUCCESS, sections } }
+    function failure(error) { return { type: userConstants.FETCH_SECTION_FAILURE, error } }
+}
+
+function fetchItems(restaurantId) {
+    return dispatch => {
+        dispatch(request());
+        userService.fetchItems(restaurantId)
+            .then((response) => {
+                dispatch(success(response.data));
+            }).catch((error) => {
+                dispatch(failure(JSON.stringify(error.data)));
+                sessionStorage.clear();
+                cookie.remove("token");
+                history.push("/login")
+            })
+    };
+    function request() { return { type: userConstants.FETCH_ITEMS_REQUEST } }
+    function success(items) { return { type: userConstants.FETCH_ITEMS_SUCCESS, items } }
+    function failure(error) { return { type: userConstants.FETCH_ITEMS_FAILURE, error } }
+}
+
+function placeOrder(data) {
+    return dispatch => {
+        dispatch(request());
+        userService.placeOrder(data)
+            .then((response) => {
+                dispatch(success(response.data));
+            }).catch((error) => {
+                dispatch(failure(JSON.stringify(error.data)));
+                sessionStorage.clear();
+                cookie.remove("token");
+                history.push("/login")
+            })
+    };
+    function request() { return { type: userConstants.PLACE_ORDER_REQUEST } }
+    function success(message) { return { type: userConstants.PLACE_ORDER_SUCCESS, message } }
+    function failure(error) { return { type: userConstants.PLACE_ORDER_FAILURE, error } }
 }

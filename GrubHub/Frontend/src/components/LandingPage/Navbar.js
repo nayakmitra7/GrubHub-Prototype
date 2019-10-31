@@ -14,7 +14,6 @@ class Navbar extends Component {
   }
   handleLogout = () => {
     sessionStorage.clear();
-    localStorage.clear();
     cookie.remove('token', { path: '/' })
   }
 

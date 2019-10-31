@@ -1,10 +1,10 @@
 
 import React, { Component } from 'react';
 import cookie from 'js-cookie';
-import axios from 'axios';
 import { Redirect } from 'react-router';
-import { address } from '../../../constant'
 import '../../../App.css';
+import { userActions } from '../../../redux/actions/user.actions';
+import { connect } from 'react-redux';
 
 class SearchPage extends Component {
     constructor(props) {
@@ -19,20 +19,24 @@ class SearchPage extends Component {
             detailsFlag: false,
             searchFlag: false,
             restaurantImage: "",
-            bag: localStorage.getItem(sessionStorage.getItem("username")) ? JSON.parse(localStorage.getItem(sessionStorage.getItem("username"))) : [],
-            authFlag: true,
+            bag: localStorage.getItem(sessionStorage.getItem("BuyerId")) ? JSON.parse(localStorage.getItem(sessionStorage.getItem("BuyerId"))) : [],
             currentPage: 1,
             restaurantsPerPage: 4
         }
         this.showRestaurantDetails = this.showRestaurantDetails.bind(this);
         this.handleClick = this.handleClick.bind(this);
     }
-
+    componentWillReceiveProps(newProps) {
+        let restaurantList = newProps.users.restaurants;
+        this.setState({
+            restaurantsServingItem: restaurantList
+        })
+    }
     handleClick = (event) => {
         this.setState({
             currentPage: Number(event.target.id), filterFlag: false
         })
-        for (var i = 1; i <= Math.ceil(this.state.restaurantsServingItem.length / this.state.restaurantsPerPage); i++) {
+        for (let i = 1; i <= Math.ceil(this.state.restaurantsServingItem.length / this.state.restaurantsPerPage); i++) {
             document.getElementById(i).className = "page-item";
 
         }
@@ -41,26 +45,7 @@ class SearchPage extends Component {
     itemSearch = () => {
         if (this.state.itemSearched.length) {
             this.setState({ itemToPrint: this.state.itemSearched, filterFlag: false })
-            axios.get(address + '/owner/searched/' + this.state.itemSearched, {
-                headers: { Authorization: 'JWT ' + cookie.get("token") }
-            })
-                .then(response => {
-                    if (response.status === 200) {
-                        this.setState({
-                            restaurantsServingItem: response.data
-                        })
-                    } else if (response.status === 201) {
-                        this.setState({
-                            errorFlag: "Some error",
-                            errorMessage: response.data
-                        })
-                    }
-                }).catch(error => {
-                    sessionStorage.clear();
-                    localStorage.clear();
-                    cookie.remove("token");
-                    this.setState({ authFlag: false })
-                })
+            this.props.fetchRestaurants(this.state.itemSearched)
 
         }
 
@@ -100,7 +85,7 @@ class SearchPage extends Component {
         let redirectVar = null;
         let array = [];
         let renderPageNumbers = [];
-        if (!this.state.authFlag) {
+        if (!cookie.get("token")) {
             redirectVar = <Redirect to="/login" />
         }
         if (this.state.detailsFlag == true) {
@@ -177,7 +162,7 @@ class SearchPage extends Component {
 
 
         let messageDisplay = "";
-        var filterBy = "";
+        let filterBy = "";
         if (this.state.errorFlag == "Some error") {
             messageDisplay = (this.state.errorMessage.map((error) => {
                 return (<li class=" li alert-danger">{error.msg}</li>)
@@ -186,8 +171,8 @@ class SearchPage extends Component {
             messageDisplay = (<ul class="li alert alert-success">Successfully Updated !!!</ul>);
         }
         if (this.state.restaurantsServingItem.length) {
-            var set1 = new Set();
-            var set2 = new Set();
+            let set1 = new Set();
+            let set2 = new Set();
             set1.add(<li class="li" onClick={this.filterView}>None</li>)
             this.state.restaurantsServingItem.forEach((item) => {
                 if (!set2.has(item.restaurantCuisine.toUpperCase())) {
@@ -225,7 +210,7 @@ class SearchPage extends Component {
                 <div class="row">
                     <div class="col-md-4"></div>
                     <div class="col-md-4">
-                        <ul id="page-numbers" class="pagination" style={{marginBottom:'10px'}}>
+                        <ul id="page-numbers" class="pagination" style={{ marginBottom: '10px' }}>
                             {renderPageNumbers}
                         </ul>
                     </div>
@@ -239,7 +224,7 @@ class SearchPage extends Component {
                     </div>
                     <div class="col-md-4"></div>
                 </div>
-               
+
                 {messageDisplay}
 
             </div>
@@ -247,6 +232,13 @@ class SearchPage extends Component {
         )
     }
 }
+function mapState(state) {
+    const { users } = state;
+    return { users };
+}
+const actionCreators = {
+    fetchRestaurants: userActions.fetchRestaurants
+};
 
-export default SearchPage;
-
+const connectedSearchPage = connect(mapState, actionCreators)(SearchPage);
+export { connectedSearchPage as SearchPage };

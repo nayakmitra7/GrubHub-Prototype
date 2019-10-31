@@ -4,25 +4,22 @@ import cookie from 'js-cookie';
 
 
 export const userService = {
-    login,signUp,updateProfile,fetchProfile,fetchBasic,fetchPastOrder,fetchUpcomingOrder,sendMessage,fetchMessageSent,fetchMessageReceived
+    login, signUp, updateUserDetails, fetchBasic, fetchPastOrder, fetchUpcomingOrder, sendMessage, fetchMessageSent, fetchMessageReceived, fetchUserDetails,
+    uploadUserPhoto,fetchRestaurants,fetchSections,fetchItems,placeOrder
 };
 
 function login(username, password) {
-    var data = { username: username, password: password }
-
+    let data = { username: username, password: password }
     return axios.post(address + '/users/login', data).
         then((response) => {
             if (response.status === 200) {
                 return Promise.resolve(response);
             }
-            else if (response.status === 201) {
-                return Promise.reject(response.data);
-            } else {
+            else {
                 return Promise.reject(response.data);
 
             }
         })
-
 }
 
 function fetchBasic(username) {
@@ -85,67 +82,96 @@ function fetchMessageReceived() {
         });
 
 }
+function uploadUserPhoto(formData, config) {
+    return axios.post(address + "/users/upload/photo", formData, config)
+        .then(response => {
+            return Promise.resolve(response);
+        }).catch(error => {
+            return Promise.reject(error);
+        });
+
+}
 
 function signUp(data) {
-    var username = data.email;
-    return axios.post("http://localhost:3001/signup", data)
+    return axios.post(address + "/users/signup", data)
         .then((response) => {
             if (response.status === 200) {
-                console.log("Status Code : ", response.status);
-                if (response.status === 200) {
-                    sessionStorage.setItem("username", username);
-                    return Promise.resolve(username);
-                }
-
-            } else if (response.status === 201) {
-                return Promise.reject(response.data);
+                return Promise.resolve(response);
             } else {
-                return Promise.reject(response.data);
+                return Promise.reject(response);
 
             }
 
         })
 }
-function updateProfile(data) {
-    var username = data.email;
-    return axios.post('http://localhost:3001/updateBuyer', data)
-        .then(response => {
-            console.log("Status Code : ", response.status);
-            if (response.status === 200) {
-                sessionStorage.setItem("username", username);
-                var data1 = { buyerID: data.ID, buyerFirstName: data.firstName, buyerLastName: data.lastName, buyerEmail: data.email, buyerPhone: data.phone }
-                return Promise.resolve(data1);
-            }
-            else if (response.status === 201) {
-                var array = [];
-                array.push(response.data);
-                var data1 = { buyerID: data.ID, buyerFirstName: data.firstName, buyerLastName: data.lastName, buyerEmail: data.email, buyerPhone: data.phone }
-                array.push(data1)
+function updateUserDetails(data) {
+    return axios.post(address + '/users/update', data, {
+        headers: { Authorization: 'JWT ' + cookie.get("token") }
+    }).then(response => {
+        if (response.status === 200) {
+            return Promise.resolve(response);
+        }
+        else {
+            return Promise.reject(response);
+        }
 
-                return Promise.reject(array);
-            } else {
-                var array = [];
-                array.push(response.data);
-                var data1 = { buyerID: data.ID, buyerFirstName: data.firstName, buyerLastName: data.lastName, buyerEmail: data.email, buyerPhone: data.phone }
-                array.push(data1)
-
-                return Promise.reject(array);
-            }
-        });
+    });
 }
 
-function fetchProfile(data) {
-    return axios.post('http://localhost:3001/Details', data)
-        .then(response => {
-            console.log("Status Code : ", response.status);
-            if (response.status === 200) {
-                return Promise.resolve(response.data);
-            } else if (response.status === 201) {
-                console.log(response.data);
-                return Promise.reject(response.data);
-            } else {
-                return Promise.reject(response.data);
-            }
-        });
+function fetchUserDetails() {
+    return axios.get(address + '/users/details/' + sessionStorage.getItem("BuyerId"), {
+        headers: { Authorization: 'JWT ' + cookie.get("token") }
+    }).then(response => {
+        if (response.status === 200) {
+            return Promise.resolve(response);
+        } else {
+            return Promise.reject(response);
+        }
+    });
 }
 
+function fetchRestaurants(itemSearched) {
+    return  axios.get(address + '/owner/searched/' +itemSearched, {
+        headers: { Authorization: 'JWT ' + cookie.get("token") }
+    }).then(response => {
+        if (response.status === 200) {
+            return Promise.resolve(response);
+        } else {
+            return Promise.reject(response);
+        }
+    });
+}
+
+function fetchSections(restaurantId) {
+    return  axios.get(address + '/section/' + restaurantId, {
+        headers: { Authorization: 'JWT ' + cookie.get("token") }
+    }).then(response => {
+        if (response.status === 200) {
+            return Promise.resolve(response);
+        } else {
+            return Promise.reject(response);
+        }
+    });
+}
+function fetchItems(restaurantId) {
+    return   axios.get(address + '/item/' + restaurantId, {
+        headers: { Authorization: 'JWT ' + cookie.get("token") }
+    }).then(response => {
+        if (response.status === 200) {
+            return Promise.resolve(response);
+        } else {
+            return Promise.reject(response);
+        }
+    });
+}
+function placeOrder(data) {
+    return axios.post(address + '/order/placeOrder', data, {
+        headers: { Authorization: 'JWT ' + cookie.get("token") }
+    }).then(response => {
+        if (response.status === 200) {
+            return Promise.resolve(response);
+        } else {
+            return Promise.reject(response);
+        }
+    });
+}

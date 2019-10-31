@@ -1,9 +1,9 @@
 import React, { Component } from 'react';
 import cookie from 'js-cookie';
 import { Redirect } from 'react-router';
-import axios from 'axios';
-import { address } from '../../../constant'
 import '../../../App.css';
+import { ownerActions } from '../../../redux/actions/owner.actions';
+import { connect } from 'react-redux';
 
 class HomeOwner extends Component {
   constructor(props) {
@@ -23,26 +23,17 @@ class HomeOwner extends Component {
       Cancelled: "",
       titleName: "New Orders",
       orderId: "",
-      authFlag: true,
       buyerId: "",
       messageBox: "",
       messageFlag: false
     }
     this.messageBoxChangeHandler = this.messageBoxChangeHandler.bind(this);
   }
+  componentWillReceiveProps(newProps) {
+    this.setState({ orders: newProps.owner.orders })
+  }
   componentDidMount() {
-    axios.get(address + '/order/new/' + sessionStorage.getItem("RestaurantID"), { headers: { Authorization: 'JWT ' + cookie.get("token") } })
-      .then(response => {
-        if (response.status === 200) {
-          this.setState({ orders: response.data })
-        }
-
-      }).catch(error => {
-        sessionStorage.clear();
-        localStorage.clear();
-        cookie.remove("token");
-        this.setState({ authFlag: false })
-      });
+    this.props.fetchNewOrders();
   }
   messageBoxChangeHandler = (e) => {
     this.setState({
@@ -50,8 +41,8 @@ class HomeOwner extends Component {
     });
   }
   statusChange = (e) => {
-    var data = ""
-    var orders = ""
+    let data = ""
+    let orders = ""
     if (this.state.orderStatus == "New") {
       data = { status: "Confirmed", id: this.state.orderId }
       orders = this.newOrders
@@ -65,113 +56,58 @@ class HomeOwner extends Component {
       data = { status: "Delivered", id: this.state.orderId }
       orders = this.readyOrders
     }
-    axios.post(address + '/order/statusChange', data, { headers: { Authorization: 'JWT ' + cookie.get("token") } })
-      .then(response => {
-        if (response.status === 200) {
-          this.modalClose();
-          orders()
-        }
-      }).catch(error => {
-        sessionStorage.clear();
-        localStorage.clear();
-        cookie.remove("token");
-        this.setState({ authFlag: false })
-      })
+    this.props.statusChangeOrder(data)
+    this.modalClose();
+    setTimeout(() => {
+      orders()
+    }, 50);
+
 
   }
   cancelledOrders = (e) => {
-    axios.get(address + '/order/cancelled/' + sessionStorage.getItem("RestaurantID"), { headers: { Authorization: 'JWT ' + cookie.get("token") } })
-      .then(response => {
-        if (response.status === 200) {
-          this.setState({ orders: response.data })
-        }
-      }).catch(error => {
-        sessionStorage.clear();
-        localStorage.clear();
-        cookie.remove("token");
-        this.setState({ authFlag: false })
-      });
+    this.props.fetchCancelledOrders()
     this.setState({ Confirmed: "", New: "", Preparing: "", Ready: "", Cancelled: "active", titleName: "Cancelled Orders" })
 
   }
   cancelOrder = (e) => {
-    var data = { id: e.target.id }
-    axios.post(address + '/order/cancel/', data, { headers: { Authorization: 'JWT ' + cookie.get("token") } })
-      .then(response => {
-        if (response.status === 200) {
-          this.modalClose();
-          this.newOrders();
-        }
-      }).catch(error => {
-        sessionStorage.clear();
-        localStorage.clear();
-        cookie.remove("token");
-        this.setState({ authFlag: false })
-      });
+    let data = { id: e.target.id }
+    this.props.cancelOrders(data);
+    this.modalClose();
+    let orders = ""
+    if (this.state.orderStatus == "New") {
+      orders = this.newOrders
+    } else if (this.state.orderStatus == "Confirmed") {
+      orders = this.confirmedOrders
+    } else if (this.state.orderStatus == "Preparing") {
+      orders = this.preparingOrders
+    } else if (this.state.orderStatus == "Ready") {
+      orders = this.readyOrders
+    }
+    setTimeout(() => {
+      orders();
+    }, 50);
+
+
   }
   newOrders = (e) => {
-    axios.get(address + '/order/new/' + sessionStorage.getItem("RestaurantID"), { headers: { Authorization: 'JWT ' + cookie.get("token") } })
-      .then(response => {
-        if (response.status === 200) {
-          this.setState({ orders: response.data })
-        }
-
-      }).catch(error => {
-        sessionStorage.clear();
-        localStorage.clear();
-        cookie.remove("token");
-        this.setState({ authFlag: false })
-      });
+    this.props.fetchNewOrders();
     this.setState({ Confirmed: "", New: "active", Preparing: "", Ready: "", Cancelled: "", titleName: "New Orders" })
   }
   confirmedOrders = (e) => {
-    axios.get(address + '/order/confirmed/' + sessionStorage.getItem("RestaurantID"), { headers: { Authorization: 'JWT ' + cookie.get("token") } })
-      .then(response => {
-        if (response.status === 200) {
-          this.setState({ orders: response.data })
-        }
-
-      }).catch(error => {
-        sessionStorage.clear();
-        localStorage.clear();
-        cookie.remove("token");
-        this.setState({ authFlag: false })
-      });
+    this.props.fetchConfirmedOrders();
     this.setState({ Confirmed: "active", New: "", Preparing: "", Ready: "", Cancelled: "", titleName: "Confirmed Orders" })
   }
   preparingOrders = (e) => {
-    axios.get(address + '/order/preparing/' + sessionStorage.getItem("RestaurantID"), { headers: { Authorization: 'JWT ' + cookie.get("token") } })
-      .then(response => {
-        if (response.status === 200) {
-          this.setState({ orders: response.data })
-        }
-
-      }).catch(error => {
-        sessionStorage.clear();
-        localStorage.clear();
-        cookie.remove("token");
-        this.setState({ authFlag: false })
-      });
+    this.props.fetchPreparingOrders();
     this.setState({ Confirmed: "", New: "", Preparing: "active", Ready: "", Cancelled: "", titleName: "Preparing" })
   }
   readyOrders = (e) => {
-    axios.get(address + '/order/ready/' + sessionStorage.getItem("RestaurantID"), { headers: { Authorization: 'JWT ' + cookie.get("token") } })
-      .then(response => {
-        if (response.status === 200) {
-          this.setState({ orders: response.data })
-        }
-
-      }).catch(error => {
-        sessionStorage.clear();
-        localStorage.clear();
-        cookie.remove("token");
-        this.setState({ authFlag: false })
-      });
+    this.props.fetchReadyOrders();
     this.setState({ Confirmed: "", New: "", Preparing: "", Ready: "active", Cancelled: "", titleName: "Ready to go" })
   }
   trackOrder = (e) => {
     document.getElementById("TrackOrder").style.display = "block"
-    var order = this.state.orders.filter((order) => {
+    let order = this.state.orders.filter((order) => {
       if (order._id == e.target.id) {
         return order
       }
@@ -188,33 +124,26 @@ class HomeOwner extends Component {
 
   }
   messageSendHandler = (e) => {
-    var today = new Date();
-    var date = today.getFullYear() + '-' + (today.getMonth() + 1) + '-' + today.getDate();
-    var time = today.getHours() + ":" + today.getMinutes();
-    var CurrentDateTime = date + ' ' + time;
-    var data = { senderId: sessionStorage.getItem("RestaurantID"), senderFirstName: sessionStorage.getItem("RestaurantName"), senderLastName: "", receiverId: this.state.buyerId, receiverFirstName: this.state.buyerFirstName, receiverLastName: this.state.buyerLastName, message: this.state.messageBox, orderDate: this.state.orderDate, messageDate: CurrentDateTime }
-
-    axios.post(address + '/message', data, { headers: { Authorization: 'JWT ' + cookie.get("token") } })
-      .then(response => {
-        if (response.status === 200) {
-          this.setState({ messageFlag: false, messageBox: "" })
-          document.getElementById("Message").style.display = "none";
-
-        } else if (response.status == 201) {
-          this.setState({ messageFlag: true })
-        }
-
-      }).catch(error => {
-        sessionStorage.clear();
-        localStorage.clear();
-        cookie.remove("token");
-        this.setState({ authFlag: false })
-      });
+    let today = new Date();
+    let date = today.getFullYear() + '-' + (today.getMonth() + 1) + '-' + today.getDate();
+    let time = today.getHours() + ":" + today.getMinutes();
+    let CurrentDateTime = date + ' ' + time;
+    let data = { senderId: sessionStorage.getItem("RestaurantID"), senderFirstName: sessionStorage.getItem("RestaurantName"), senderLastName: "", receiverId: this.state.buyerId, receiverFirstName: this.state.buyerFirstName, receiverLastName: this.state.buyerLastName, message: this.state.messageBox, orderDate: this.state.orderDate, messageDate: CurrentDateTime }
+    if (this.state.messageBox.length) {
+      this.props.sendMessage(data);
+      this.setState({ successFlag: true })
+      setTimeout(() => {
+        document.getElementById("Message").style.display = "none";
+        this.setState({ messageFlag: false, messageBox: "", successFlag: false })
+      }, 1000);
+    } else {
+      this.setState({ messageFlag: true })
+    }
 
   }
   sendMessage = (e) => {
     document.getElementById("Message").style.display = "block"
-    var order = this.state.orders.filter((order) => {
+    let order = this.state.orders.filter((order) => {
       if (order._id == e.target.id) {
         return order
       }
@@ -237,71 +166,74 @@ class HomeOwner extends Component {
   }
   render() {
 
-    var redirectVar = "";
-    var cancelButton = "";
-    var statusButton = "";
-    var messageDisplay = ""
+    let redirectVar = "";
+    let cancelButton = "";
+    let statusButton = "";
+    let messageDisplay = ""
     if (this.state.messageFlag == true) {
       messageDisplay = (<ul class="li alert alert-danger">Message body is needed</ul>);
+    }
+    if (this.state.successFlag) {
+      messageDisplay = (<ul class="li alert alert-success" style={{ textAlign: "center", paddingTop: '10px' }}>Message Sent !!!</ul>);
     }
     if (this.state.orderStatus != "Cancelled" && this.state.orderStatus != "Delivered") {
       cancelButton = (<div class="col-md-4"><button class="btn btn-danger btn-lg" style={{ width: '60%' }} id={this.state.orderId} onClick={this.cancelOrder}> Cancel Order</button></div>)
     }
-    if (!this.state.authFlag) {
+    if (!cookie.get("token")) {
       redirectVar = <Redirect to="/LoginOwner" />
     }
-    var array = [];
-    if (this.state.orders.length) {
+    let array = [];
+    if (this.state.orders) {
+      this.state.orders.map((order) => {
+        if (order.orderStatus != "Delivered") {
+          let val = JSON.parse(order.orderDetails);
+          let array2 = []
+          let sum = parseFloat(0);
+          let count = parseInt(0);
+          val.map((item) => {
+            sum += parseFloat(item.itemCostTotal)
+            count += parseInt(item.itemCount)
 
+          })
+
+          array.push(<div class="row embossed-heavy" style={{ marginLeft: '100px', marginRight: '140px', marginBottom: '10px', paddingBottom: '10px', fontWeight: 'bold', backgroundColor: 'white' }}>
+            <div class="row" style={{ backgroundColor: '#f2f2f2', marginLeft: '0px', marginRight: '0px' }}>
+              <div class="col-md-2" style={{ paddingRight: '0px' }}><h5>Order Date :</h5></div>
+              <div class="col-md-2" style={{ paddingLeft: '0px' }}><h5>{order.orderDate}</h5></div>
+              <div class="col-md-5"></div>
+              <div class="col-md-3">
+                <button class="btn " id={order._id} style={{ backgroundColor: 'Green', color: 'white', fontSize: '16px', marginTop: '0px', marginTop: '10px' }} onClick={this.sendMessage}> Send A Message</button>
+              </div>
+            </div>
+            <div class="row">
+              <div class="col-md-8"><p style={{ fontSize: '20px', marginLeft: '10px', marginTop: '10px', marginBottom: '0px' }}>{order.buyerFirstName}  {order.buyerLastName}</p></div>
+              <div class="col-md-2"><h5 style={{ fontWeight: 'bold' }}>Items {count}</h5></div>
+              <div class="col-md-2"></div>
+            </div>
+
+            <div class="row">
+              <div class="col-md-8"><p style={{ marginLeft: '10px', fontSize: '15px', paddingBottom: '0px' }}>{order.buyerAddress}</p></div>
+              <div class="col-md-4">${sum.toFixed(2)}</div>
+
+            </div>
+            <div class="row" style={{ marginLeft: '5px' }}>
+              <div class="col-md-4" ></div>
+              <div class="col-md-4">
+                <button class="btn " id={order._id} style={{ backgroundColor: 'blue', color: 'white', fontSize: '16px', marginTop: '0px' }} onClick={this.trackOrder}> Order Details</button>
+              </div>
+              <div class="col-md-4" ></div>
+            </div>
+          </div>)
+        }
+
+
+      })
     } else {
       array.push(<div class="NoOrder"></div>)
     }
-    this.state.orders.map((order) => {
-      if (order.orderStatus != "Delivered") {
-        var val = JSON.parse(order.orderDetails);
-        var array2 = []
-        var sum = parseFloat(0);
-        var count = parseInt(0);
-        val.map((item) => {
-          sum += parseFloat(item.itemCostTotal)
-          count += parseInt(item.itemCount)
 
-        })
-
-        array.push(<div class="row embossed-heavy" style={{ marginLeft: '100px', marginRight: '140px', marginBottom: '10px', paddingBottom: '10px', fontWeight: 'bold', backgroundColor: 'white' }}>
-          <div class="row" style={{ backgroundColor: '#f2f2f2', marginLeft: '0px', marginRight: '0px' }}>
-            <div class="col-md-2" style={{ paddingRight: '0px' }}><h5>Order Date :</h5></div>
-            <div class="col-md-2" style={{ paddingLeft: '0px' }}><h5>{order.orderDate}</h5></div>
-            <div class="col-md-5"></div>
-            <div class="col-md-3">
-              <button class="btn " id={order._id} style={{ backgroundColor: 'Green', color: 'white', fontSize: '16px', marginTop: '0px', marginTop: '10px' }} onClick={this.sendMessage}> Send A Message</button>
-            </div>
-          </div>
-          <div class="row">
-            <div class="col-md-8"><p style={{ fontSize: '20px', marginLeft: '10px', marginTop: '10px', marginBottom: '0px' }}>{order.buyerFirstName}  {order.buyerLastName}</p></div>
-            <div class="col-md-2"><h5 style={{ fontWeight: 'bold' }}>Items {count}</h5></div>
-            <div class="col-md-2"></div>
-          </div>
-
-          <div class="row">
-            <div class="col-md-8"><p style={{ marginLeft: '10px', fontSize: '15px', paddingBottom: '0px' }}>{order.buyerAddress}</p></div>
-            <div class="col-md-4">${sum.toFixed(2)}</div>
-
-          </div>
-          <div class="row" style={{ marginLeft: '5px' }}>
-            <div class="col-md-4" ></div>
-            <div class="col-md-4">
-              <button class="btn " id={order._id} style={{ backgroundColor: 'blue', color: 'white', fontSize: '16px', marginTop: '0px' }} onClick={this.trackOrder}> Order Details</button>
-            </div>
-            <div class="col-md-4" ></div>
-          </div>
-        </div>)
-      }
-
-
-    })
-    var items = []
-    var sum = parseFloat(0);
+    let items = []
+    let sum = parseFloat(0);
     this.state.orderDetails.map((item) => {
       sum += parseFloat(item.itemCostTotal)
       items.push(<div class="row" style={{ marginLeft: '30px', marginBottom: '20px', textAlign: 'center' }}>
@@ -319,7 +251,7 @@ class HomeOwner extends Component {
       <div class="col-md-3"><h4>Amount Paid :</h4></div>
       <div class="col-md-1"><h4>${sum.toFixed(2)}</h4></div>
     </div>)
-    var progressBar = []
+    let progressBar = []
     switch (this.state.orderStatus) {
       case 'New':
         statusButton = (<div class="row">
@@ -472,5 +404,20 @@ class HomeOwner extends Component {
     )
   }
 }
+function mapState(state) {
+  const { owner, alert } = state;
+  return { owner, alert };
+}
+const actionCreators = {
+  fetchNewOrders: ownerActions.fetchNewOrders,
+  fetchConfirmedOrders: ownerActions.fetchConfirmedOrders,
+  fetchPreparingOrders: ownerActions.fetchPreparingOrders,
+  fetchReadyOrders: ownerActions.fetchReadyOrders,
+  fetchCancelledOrders: ownerActions.fetchCancelledOrders,
+  cancelOrders: ownerActions.cancelOrders,
+  statusChangeOrder: ownerActions.statusChange,
+  sendMessage:ownerActions.sendMessage
+};
 
-export default HomeOwner;
+const connectedHomeOwner = connect(mapState, actionCreators)(HomeOwner);
+export { connectedHomeOwner as HomeOwner };

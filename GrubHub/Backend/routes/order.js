@@ -1,6 +1,6 @@
-var express = require('express');
-var router = express.Router();
-var app = express();
+let express = require('express');
+let router = express.Router();
+let app = express();
 app.use('/uploads', express.static('uploads'))
 let order = require('../model/orderModel');
 
@@ -135,7 +135,7 @@ router.get('/upcomingOrders/user/(:data)', function (req, res, next) {
 
 })
 router.get('/pastOrders/owner/(:data)',function (req, res, next) {
-    order.find({ $and: [{ restaurantId: req.params.data },{ orderStatus: "Delivered" }]}).exec((err, result) => {
+    order.find({ $and: [{ restaurantId: req.params.data },{ orderStatus: "Delivered" }]}).sort({$natural:-1}).exec((err, result) => {
         if (err) {
             next();
         } else if (result == null) {
@@ -147,8 +147,8 @@ router.get('/pastOrders/owner/(:data)',function (req, res, next) {
 
 })
 router.use((req, res, next) => {
-    var message = [];
-    var errors = { msg: "Something went wrong!" }
+    let message = [];
+    let errors = { msg: "Something went wrong!" }
     message.push(errors);
     res.writeHead(201, {
         'Content-Type': 'text/plain'
