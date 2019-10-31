@@ -1,7 +1,6 @@
 const jwtSecret = 'mahalasa_narayani';
 const passport = require('passport');
 const LocalStrategy = require('passport-local').Strategy;
-let pool = require('./Base.js');
 const bcrypt = require('bcrypt');
 const JWTstrategy = require('passport-jwt').Strategy;
 const ExtractJWT = require('passport-jwt').ExtractJwt;
