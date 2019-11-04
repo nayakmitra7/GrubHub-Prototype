@@ -1,0 +1,2 @@
+[2019-11-03 21:04:24,342] INFO Snapshotting: 0x1c7f0 to /tmp/zookeeper/version-2/snapshot.1c7f0 (org.apache.zookeeper.server.persistence.FileTxnSnapLog)
+[2019-11-03 21:04:24,446] INFO Creating new log file: log.1c7f2 (org.apache.zookeeper.server.persistence.FileTxnLog)
