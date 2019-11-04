@@ -1,13 +1,10 @@
-const jwtSecret = 'mahalasa_narayani';
+const { jwtSecret, saltRounds } = require('./constants');
 const passport = require('passport');
 const LocalStrategy = require('passport-local').Strategy;
 const bcrypt = require('bcrypt');
 const JWTstrategy = require('passport-jwt').Strategy;
 const ExtractJWT = require('passport-jwt').ExtractJwt;
-const saltRounds = 10;
-
-let buyer = require('../model/buyerModel');
-let owner = require('../model/restaurantModel');
+var kafka = require('../kafka/client');
 
 
 passport.serializeUser(function (user, done) {
@@ -23,7 +20,7 @@ passport.use('login',
         passwordField: 'password'
     },
         function (username, password, done) {
-            buyer.findOne({ buyerEmail: username }).exec((err, post) => {
+            kafka.make_request('postBuyerLogin', username, function (err, post) {
                 if (err) {
                     return done(null, false);
                 }
@@ -34,7 +31,7 @@ passport.use('login',
                     return done(message, false);
                 } else {
                     bcrypt.compare(password, post.buyerPassword, function (err, result) {
-    
+
                         if (result) {
                             let user = { username: username, id: post._id }
                             return done(null, user);
@@ -56,7 +53,7 @@ passport.use('loginOwner',
         passwordField: 'password'
     },
         function (username, password, done) {
-            owner.findOne({ ownerEmail: username }).exec((err, post) => {
+            kafka.make_request('postRestaurantLogin', username, function (err, post) {
                 if (err) {
                     return done(null, false);
                 }
@@ -67,7 +64,7 @@ passport.use('loginOwner',
                     return done(message, false);
                 } else {
                     bcrypt.compare(password, post.ownerPassword, function (err, result) {
-    
+
                         if (result) {
                             let user = { username: username, id: post._id }
                             return done(null, user);
@@ -91,22 +88,8 @@ passport.use('signup',
     }, function (req, firstName, password, done) {
         bcrypt.hash(req.body.password, saltRounds, function (err, hash) {
             if (!err) {
-                const buyerFirstName = req.body.firstName;
-                const buyerLastName = req.body.lastName;
-                const buyerEmail = req.body.email;
-                const buyerPhone = "";
-                const buyerImage = null;
-                const buyerAddress = req.body.address;
-                const newBuyer = new buyer({
-                    buyerFirstName,
-                    buyerLastName,
-                    buyerEmail,
-                    buyerPassword: hash,
-                    buyerPhone,
-                    buyerImage,
-                    buyerAddress
-                });
-                newBuyer.save((err, buyer) => {
+               req.body.hash=hash;
+                kafka.make_request('postBuyerSignup', req.body, function (err, buyer) {
                     if (err) {
                         let message = [];
                         let errors = { msg: "You already have an account!" };
@@ -124,40 +107,17 @@ passport.use('signup',
         });
 
     }
-));
+    ));
 passport.use('signupOwner',
     new LocalStrategy({
         usernameField: 'firstName',
         passwordField: 'password',
         passReqToCallback: true
-    }, function (req, firstName, password, done) {        
+    }, function (req, firstName, password, done) {
         bcrypt.hash(req.body.password, saltRounds, function (err, hash) {
             if (!err) {
-                const ownerFirstName = req.body.firstName;
-                const ownerLastName = req.body.lastName;
-                const ownerEmail = req.body.email;
-                const ownerPassword =hash;
-                const ownerImage = null;
-                const ownerPhone = req.body.phone;
-                const restaurantName=req.body.restaurant;
-                const restaurantCuisine="";
-                const restaurantImage=null;
-                const restaurantAddress="";
-                const restaurantZipCode=req.body.zipcode;
-                const newOwner = new owner({
-                    ownerFirstName,
-                    ownerLastName,
-                    ownerEmail,
-                    ownerPassword,
-                    ownerImage,
-                    ownerPhone,
-                    restaurantName,
-                    restaurantCuisine,
-                    restaurantImage,
-                    restaurantAddress,
-                    restaurantZipCode
-                });
-                newOwner.save((err, owner) => {
+                req.body.hash=hash;
+                kafka.make_request('postOwnerSignup', req.body, function (err, owner) {
                     if (err) {
                         let message = [];
                         let errors = { msg: "You already have an account!" };
@@ -175,7 +135,7 @@ passport.use('signupOwner',
         });
 
     }
-));
+    ));
 
 const opts = {
     jwtFromRequest: ExtractJWT.fromAuthHeaderWithScheme('JWT'),

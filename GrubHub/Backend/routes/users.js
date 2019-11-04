@@ -1,13 +1,12 @@
-const jwtSecret = 'mahalasa_narayani';
 let express = require('express');
 const { check, validationResult } = require('express-validator');
 let router = express.Router();
 let app = express();
 const jwt = require('jsonwebtoken');
 const passport = require('passport');
-const address = "http://localhost:"
+const {address,jwtSecret} = require('../config/constants');
 let message = [];
-let buyer = require('../model/buyerModel');
+var kafka = require('../kafka/client');
 app.use('/uploads', express.static('uploads'))
 const multer = require('multer');
 let storage = multer.diskStorage({
@@ -60,11 +59,8 @@ router.post('/signup',
         }
     });
 router.get('/detailsBasic/(:data)', function (req, res, next) {
-    buyer.findOne({ buyerEmail: req.params.data }).exec((err, post) => {
-        if (err) {
-            next();
-        }
-        else if (post == null) {
+    kafka.make_request('getDetailsBasicBuyer', req.params.data, function (err, post) {
+        if (err||post == null) {
             next();
         } else {
             res.status(200).end(JSON.stringify(post));
@@ -77,7 +73,7 @@ router.get('/details/(:data)', function (req, res, next) {
         if (!validity) {
             res.status(401).send({ message: "Expired session . Logging out" });
         } else {
-            buyer.findOne({ _id: req.params.data }).exec((err, post) => {
+            kafka.make_request('getDetailsBuyer', req.params.data, function (err, post) {
                 if (err||post == null) {
                     next();
                 }else {
@@ -109,8 +105,7 @@ check("email", "Wrong E-Mail format.").isEmail(), check("address", "Address is n
                 if (!validity) {
                     res.status(401).send({ message: "Expired session . Logging out" });
                 } else {
-                    let update = { buyerFirstName: req.body.firstName, buyerLastName: req.body.lastName, buyerEmail: req.body.email, buyerPhone: req.body.phone, buyerAddress: req.body.address }
-                    buyer.findOneAndUpdate({ _id: req.body.ID }, update, { new: true }).exec((err, user) => {
+                    kafka.make_request('putUpdateBuyer', req.body, function (err, user) {
                         if (err||user==null) {
                             next();
                         }else{
@@ -133,8 +128,7 @@ router.post('/upload/photo', upload.single('myImage'), function (req, res, next)
         if (!validity) {
             res.status(401).send({ message: "Expired session . Logging out" });
         } else {
-            let data = { buyerImage: "uploads/profileImage" + req.file.originalname + ".jpeg" }
-            buyer.findOneAndUpdate({ _id: req.file.originalname }, data).exec((err, user) => {
+            kafka.make_request('postBuyerImage', req.file, function (err, post) {
                 if (err) {
                     next();
                 } else {

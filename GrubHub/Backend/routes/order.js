@@ -1,90 +1,20 @@
 let express = require('express');
 let router = express.Router();
-let app = express();
-app.use('/uploads', express.static('uploads'))
-let order = require('../model/orderModel');
+var kafka = require('../kafka/client');
 
 router.post('/placeOrder', function (req, res, next) {
-    const orderStatus= "New";
-    const orderDetails= req.body.bag;
-    const orderDate= req.body.date;
-    const buyerId= req.body.buyerID;
-    const buyerAddress= req.body.buyerAddress;
-    const buyerFirstName= req.body.buyerFirstName;
-    const buyerLastName= req.body.buyerLastName;
-    const restaurantId= req.body.restaurantId;
-    const restaurantName= req.body.restaurantName;
-    const newOrder= new order({
-        orderStatus,orderDetails,orderDate,buyerId,buyerAddress,buyerFirstName,buyerLastName,restaurantId,restaurantName,restaurantName
-    })
-    newOrder.save((err,order)=>{
-        if(err){
+    kafka.make_request('postPlaceOrder', req.body, function (err, result) {
+        if (err) {
             next()
-        }else{
+        } else {
             res.status(200).send("success");
         }
     })
 
 })
-
-router.get('/new/(:data)', function (req, res, next) {
-    order.find({$and:[{ restaurantId: req.params.data },{orderStatus:"New"}]}).sort({$natural:-1}).exec((err, result) => {
-        if (err) {
-            next();
-        } else if (result == null) {
-            res.status(200).send(JSON.stringify(""))
-        } else {
-            res.status(200).send(JSON.stringify(result))
-        }
-    })
-})
-router.get('/confirmed/(:data)', function (req, res, next) {
-    order.find({$and:[{ restaurantId: req.params.data },{orderStatus:"Confirmed"}]}).sort({$natural:-1}).exec((err, result) => {
-        if (err) {
-            next();
-        } else if (result == null) {
-            res.status(200).send(JSON.stringify(""))
-        } else {
-            res.status(200).send(JSON.stringify(result))
-        }
-    })
-})
-router.get('/preparing/(:data)', function (req, res, next) {
-    order.find({$and:[{ restaurantId: req.params.data },{orderStatus:"Preparing"}]}).sort({$natural:-1}).exec((err, result) => {
-        if (err) {
-            next();
-        } else if (result == null) {
-            res.status(200).send(JSON.stringify(""))
-        } else {
-            res.status(200).send(JSON.stringify(result))
-        }
-    })
-})
-router.get('/ready/(:data)', function (req, res, next) {
-    order.find({$and:[{ restaurantId: req.params.data },{orderStatus:"Ready"}]}).sort({$natural:-1}).exec((err, result) => {
-        if (err) {
-            next();
-        } else if (result == null) {
-            res.status(200).send(JSON.stringify(""))
-        } else {
-            res.status(200).send(JSON.stringify(result))
-        }
-    })
-})
-router.get('/cancelled/(:data)', function (req, res, next) {
-    order.find({$and:[{ restaurantId: req.params.data },{orderStatus:"Cancelled"}]}).sort({$natural:-1}).exec((err, result) => {
-        if (err) {
-            next();
-        } else if (result == null) {
-            res.status(200).send(JSON.stringify(""))
-        } else {
-            res.status(200).send(JSON.stringify(result))
-        }
-    })
-})
 router.post('/cancel',
     function (req, res, next) {
-         order.findOneAndUpdate({_id:req.body.id},{orderStatus:"Cancelled"}).exec((err, result) => {
+        kafka.make_request('postCancelOrder', req.body, function (err, result) {
             if (err) {
                 next();
             } else if (result == null) {
@@ -97,7 +27,7 @@ router.post('/cancel',
     })
 router.post('/statusChange',
     function (req, res, next) {
-        order.findOneAndUpdate({_id:req.body.id},{orderStatus:req.body.status}).exec((err, result) => {
+        kafka.make_request('postChangeOrderStatus', req.body, function (err, result) {
             if (err) {
                 next();
             } else if (result == null) {
@@ -110,8 +40,65 @@ router.post('/statusChange',
 
     })
 
+router.get('/new/(:data)', function (req, res, next) {
+    kafka.make_request('getNewOrderOwner', req.params.data, function (err, result) {
+        if (err) {
+            next();
+        } else if (result == null) {
+            res.status(200).send(JSON.stringify(""))
+        } else {
+            res.status(200).send(JSON.stringify(result))
+        }
+
+
+    });
+})
+router.get('/confirmed/(:data)', function (req, res, next) {
+    kafka.make_request('getConfirmedOrderOwner', req.params.data, function (err, result) {
+        if (err) {
+            next();
+        } else if (result == null) {
+            res.status(200).send(JSON.stringify(""))
+        } else {
+            res.status(200).send(JSON.stringify(result))
+        }
+    })
+})
+router.get('/preparing/(:data)', function (req, res, next) {
+    kafka.make_request('getPreparingOrderOwner', req.params.data, function (err, result) {
+        if (err) {
+            next();
+        } else if (result == null) {
+            res.status(200).send(JSON.stringify(""))
+        } else {
+            res.status(200).send(JSON.stringify(result))
+        }
+    })
+})
+router.get('/ready/(:data)', function (req, res, next) {
+    kafka.make_request('getReadyOrderOwner', req.params.data, function (err, result) {
+        if (err) {
+            next();
+        } else if (result == null) {
+            res.status(200).send(JSON.stringify(""))
+        } else {
+            res.status(200).send(JSON.stringify(result))
+        }
+    })
+})
+router.get('/cancelled/(:data)', function (req, res, next) {
+    kafka.make_request('getCancelledOrderOwner', req.params.data, function (err, result) {
+        if (err) {
+            next();
+        } else if (result == null) {
+            res.status(200).send(JSON.stringify(""))
+        } else {
+            res.status(200).send(JSON.stringify(result))
+        }
+    })
+})
 router.get('/pastOrders/user/(:data)', function (req, res, next) {
-    order.find({ $and: [{ buyerId: req.params.data }, { $or: [{ orderStatus: "Delivered" }, { orderStatus: "Cancelled" }] }] }).sort({$natural:-1}).exec((err, result) => {
+    kafka.make_request('getPastOrderUser', req.params.data, function (err, result) {
         if (err) {
             next();
         } else if (result == null) {
@@ -123,7 +110,7 @@ router.get('/pastOrders/user/(:data)', function (req, res, next) {
 
 })
 router.get('/upcomingOrders/user/(:data)', function (req, res, next) {
-    order.find({$and:[{ buyerId: req.params.data },{ $and: [{ orderStatus: { $ne: "Delivered" } }, { orderStatus: { $ne: "Cancelled" } }] }]}).sort({$natural:-1}).exec((err, result) => {
+    kafka.make_request('getUpcomingOrderUser', req.params.data, function (err, result) {
         if (err) {
             next();
         } else if (result == null) {
@@ -134,8 +121,8 @@ router.get('/upcomingOrders/user/(:data)', function (req, res, next) {
     })
 
 })
-router.get('/pastOrders/owner/(:data)',function (req, res, next) {
-    order.find({ $and: [{ restaurantId: req.params.data },{ orderStatus: "Delivered" }]}).sort({$natural:-1}).exec((err, result) => {
+router.get('/pastOrders/owner/(:data)', function (req, res, next) {
+    kafka.make_request('getPastOrderOwner', req.params.data, function (err, result) {
         if (err) {
             next();
         } else if (result == null) {
@@ -146,6 +133,7 @@ router.get('/pastOrders/owner/(:data)',function (req, res, next) {
     })
 
 })
+
 router.use((req, res, next) => {
     let message = [];
     let errors = { msg: "Something went wrong!" }

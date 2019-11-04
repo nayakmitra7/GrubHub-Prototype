@@ -21,7 +21,6 @@ function login(username, password) {
                 dispatch(success(response.data));
                 history.push("/HomeOwner");
             }).catch((error) => {
-                console.log(error)
                 dispatch(failure(JSON.stringify(error.data)));
                 dispatch(alertActions.error(error.data));
             })
@@ -293,7 +292,6 @@ function signUp(data) {
                 cookie.set("token", response.data.tokens);
                 history.push("/SetUpOwner");
             }).catch((error) => {
-                console.log(error)
                 dispatch(failure(JSON.stringify(error)));
                 dispatch(alertActions.error(error.data));
             })
@@ -309,14 +307,11 @@ function FetchOwner(data) {
         dispatch(request({ username }));
 
         ownerService.FetchOwner(username).then((response) => {
-            console.log("fetch" + response)
             ownerService.FetchRestaurant(response.restaurantId).then((responses) => {
-                console.log("resposnes" + JSON.stringify(responses[0]))
                 dispatch(success(responses[0]));
             })
 
         }).catch((error) => {
-            console.log(error)
             dispatch(failure(error));
             dispatch(alertActions.error(error));
         })

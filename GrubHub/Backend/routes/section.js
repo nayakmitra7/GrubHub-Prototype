@@ -1,27 +1,17 @@
-let express = require('express');
 const { check, validationResult } = require('express-validator');
-let router = express.Router();
 let message = [];
-let section = require('../model/sectionModel');
-let item = require('../model/itemModel');
-
+let express = require('express');
+let router = express.Router();
+var kafka = require('../kafka/client');
 
 router.post('/',
     [check("sectionName", "Section Name is needed.").not().isEmpty()]
     , function (req, res, next) {
-        const menuSectionName = req.body.sectionName;
-        const menuSectionDesc = req.body.sectionDesc;
-        const restaurantId = req.body.restaurantId;
-        const newSection = new section({
-            menuSectionName,
-            menuSectionDesc,
-            restaurantId
-        });
         message = validationResult(req).errors;
         if (message.length > 0) {
             next(message);
         } else {
-            newSection.save((err, sect) => {
+            kafka.make_request('postSection', req.body, function (err, result) {
                 if (err) {
                     errors = { msg: "The Section already exits." }
                     message.push(errors);
@@ -33,9 +23,8 @@ router.post('/',
 
         }
     })
-//.sort({menuSectionName:1})
 router.get('/(:data)', function (req, res, next) {
-    section.find({ restaurantId: req.params.data }).exec((err, result) => {
+    kafka.make_request('getSection', req.params.data, function (err, result) {
         if (err) {
             next();
         } else {
@@ -52,11 +41,12 @@ router.put('/', [check("menuSectionName", "Section Name is needed.").not().isEmp
         if (message.length > 0) {
             next(message);
         } else {
-            let data = { menuSectionName: req.body.menuSectionName, menuSectionDesc: req.body.menuSectionDesc }
-            section.findOneAndUpdate({ _id: req.body.menuSectionId }, data).exec((err, user) => {
+            kafka.make_request('putSection', req.body, function (err, result) {
                 if (err) {
                     next();
-                } else {
+                } else if(result==null){
+                    next();
+                }else {
                     res.status(200).end("Success");
                 }
             });
@@ -65,7 +55,7 @@ router.put('/', [check("menuSectionName", "Section Name is needed.").not().isEmp
 
 let promiseDelete = (req) => {
     return new Promise((resolve, reject) => {
-        item.deleteMany({ sectionId: req.params.data }).exec((err, result) => {
+        kafka.make_request('deleteItemMany', req.params.data , function (err, result) {
             if (err) {
                 reject()
             } else {
@@ -77,7 +67,7 @@ let promiseDelete = (req) => {
 }
 router.delete('/(:data)', function (req, res, next) {
     promiseDelete(req).then(() => {
-        section.deleteOne({ _id: req.params.data }).exec((err, result) => {
+        kafka.make_request('deleteSection', req.params.data , function (err, result) {
             if (err) {
                 next()
             } else {

@@ -4,13 +4,12 @@ let router = express.Router();
 let app = express();
 const passport = require('passport');
 const jwt = require('jsonwebtoken');
-const jwtSecret = 'mahalasa_narayani';
-const address = "http://localhost:"
+const { address, jwtSecret } = require('../config/constants');
 let message = [];
-let restaurant = require('../model/restaurantModel');
-let item = require('../model/itemModel');
 app.use('/uploads', express.static('uploads'))
 const multer = require('multer');
+var kafka = require('../kafka/client');
+
 let storage3 = multer.diskStorage({
     destination: function (req, file, cb) {
         cb(null, 'uploads');
@@ -85,9 +84,9 @@ check("restaurantZipCode", "Restaurant ZipCode is Invalid.").isLength({ min: 5, 
         if (message.length > 0) {
             next(message);
         } else {
-            const update = { ownerFirstName: req.body.firstName, ownerLastName: req.body.lastName, ownerEmail: req.body.email, ownerPhone: req.body.phone, restaurantName: req.body.restaurantName, restaurantAddress: req.body.restaurantAddress, restaurantCuisine: req.body.restaurantCuisine, restaurantZipCode: req.body.restaurantZipCode };
-            restaurant.findOneAndUpdate({ _id: req.body.restaurantId }, update, { new: true }).exec((err, user) => {
-                if (err||user == null) {
+
+            kafka.make_request('putUpdateRestaurant', req.body, function (err, user) {
+                if (err || user == null) {
                     next();
                 } else {
                     let results = JSON.parse(JSON.stringify(user));
@@ -106,21 +105,21 @@ check("restaurantZipCode", "Restaurant ZipCode is Invalid.").isLength({ min: 5, 
         }
     })
 router.get('/detailsBasic/(:data)', function (req, res, next) {
-    restaurant.findOne({ ownerEmail: req.params.data }).exec((err, post) => {
-        if (err||post == null) {
+    kafka.make_request('getDetailsBasicRestaurant', req.params.data, function (err, post) {
+        if (err || post == null) {
             next();
         }
-         else {
+        else {
             res.status(200).end(JSON.stringify(post));
         }
 
     })
 })
 router.get('/details/(:data)', passport.authenticate('jwt'), function (req, res, next) {
-    restaurant.findOne({ _id: req.params.data }).exec((err, post) => {
-        if (err||post == null) {
+    kafka.make_request('getDetailsRestaurant', req.params.data, function (err, post) {
+        if (err || post == null) {
             next();
-        }else {
+        } else {
             let results = JSON.parse(JSON.stringify(post));
             if (JSON.parse(JSON.stringify(post)).ownerImage != null) {
                 let imageAddress = address + "3001/" + JSON.parse(JSON.stringify(post)).ownerImage;
@@ -137,8 +136,7 @@ router.get('/details/(:data)', passport.authenticate('jwt'), function (req, res,
 
 })
 router.post('/OwnerImage', passport.authenticate('jwt'), upload3.single('myImage'), function (req, res, next) {
-    let data = { ownerImage: "uploads/ownerImage" + req.file.originalname + ".jpeg" }
-    restaurant.findOneAndUpdate({ _id: req.file.originalname }, data).exec((err, user) => {
+    kafka.make_request('postOwnerImage', req.file, function (err, post) {
         if (err) {
             next();
         } else {
@@ -147,8 +145,7 @@ router.post('/OwnerImage', passport.authenticate('jwt'), upload3.single('myImage
     });
 });
 router.post('/restaurantImage', passport.authenticate('jwt'), upload4.single('myImage'), function (req, res, next) {
-    let data = { restaurantImage: "uploads/restaurantImage" + req.file.originalname + ".jpeg" }
-    restaurant.findOneAndUpdate({ _id: req.file.originalname }, data).exec((err, user) => {
+    kafka.make_request('postRestaurantImage', req.file, function (err, post) {
         if (err) {
             next();
         } else {
@@ -158,25 +155,14 @@ router.post('/restaurantImage', passport.authenticate('jwt'), upload4.single('my
 });
 
 router.get('/searched/(:data)', passport.authenticate('jwt'), function (req, res, next) {
-    item.find({ "ItemName": { $regex: '.*' + req.params.data + '.*', $options: 'i' } }).distinct('restaurantId').exec((err, post) => {
+    kafka.make_request('getRestaurantSearched', req.params.data, function (err, result) {
         if (err) {
-            reject();
+            next();
         } else {
-            restaurant.find().where('_id').in(post).exec((err, result) => {
-                let modifiedResult = [];
-                JSON.parse(JSON.stringify(result)).forEach(restaurant => {
-                    if (restaurant.restaurantImage != null) {
-                        restaurant.restaurantImage = address + "3001/" + restaurant.restaurantImage;
-                        modifiedResult.push(restaurant);
-                    } else {
-                        modifiedResult.push(restaurant);
-                    }
-                });
-                res.status(200).end(JSON.stringify(JSON.parse(JSON.stringify(modifiedResult))));
-            })
-
+            res.status(200).end(JSON.stringify(JSON.parse(JSON.stringify(result))));
         }
-    })
+    });
+
 })
 router.use((error, req, res, next) => {
     res.writeHead(201, {

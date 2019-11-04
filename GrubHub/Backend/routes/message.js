@@ -1,32 +1,18 @@
-let express = require('express');
 const { check, validationResult } = require('express-validator');
+let express = require('express');
 let router = express.Router();
-let messages = require('../model/messageModel');
-
-
+var kafka = require('../kafka/client');
 
 router.post('/',
     [check("message", "Message is needed.").not().isEmpty()]
     , function (req, res, next) {
-        const senderFirstName = req.body.senderFirstName;
-        const senderLastName = req.body.senderLastName;
-        const receiverFirstName = req.body.receiverFirstName;
-        const receiverLastName = req.body.receiverLastName;
-        const messageBody = req.body.message;
-        const senderId = req.body.senderId;
-        const receiverId = req.body.receiverId;
-        const orderDate = req.body.orderDate;
-        const messageDate = req.body.messageDate;
-        const newMessage = new messages({
-            senderFirstName, senderLastName, receiverFirstName, receiverLastName, messageBody, senderId, receiverId, orderDate,messageDate
-        });
-       let message = validationResult(req).errors;
+        let message = validationResult(req).errors;
         if (message.length > 0) {
             next(message);
         } else {
-            newMessage.save((err, item) => {
+            kafka.make_request('postMessage', req.body, function (err, result) {
                 if (err) {
-                  next();
+                    next();
                 } else {
                     res.status(200).send("Success");
                 }
@@ -35,7 +21,7 @@ router.post('/',
     })
 
 router.get('/received/(:data)', function (req, res, next) {
-    messages.find({ receiverId: req.params.data }).sort({$natural:-1}).exec((err, result) => {
+    kafka.make_request('getReceivedMessage', req.params.data, function (err, result) {
         if (err) {
             next();
         } else if (result == null) {
@@ -47,7 +33,7 @@ router.get('/received/(:data)', function (req, res, next) {
 
 })
 router.get('/sent/(:data)', function (req, res, next) {
-    messages.find({ senderId: req.params.data }).sort({$natural:-1}).exec((err, result) => {
+    kafka.make_request('getSentMessage', req.params.data, function (err, result) {
         if (err) {
             next();
         } else if (result == null) {

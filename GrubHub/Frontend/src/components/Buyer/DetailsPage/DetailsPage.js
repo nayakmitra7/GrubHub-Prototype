@@ -222,6 +222,7 @@ class DetailsPage extends Component {
         let bagDispay = ""
         let bagButtonDisplay = "";
         let array = [];
+        let arrayBag = [];
         let subTotal = parseFloat(0);
         let itemImage = "";
         let messageDisplay = ""
@@ -233,8 +234,8 @@ class DetailsPage extends Component {
                 <img style={{ width: "70%", paddingBottom: "10px", paddingTop: "10px" }} src={this.state.itemImage} class="rounded" /></div>)
         }
         if (this.state.bag.length) {
-            array.push(<div class="row"><div class="col-md-12" style={{ textAlign: 'center', fontSize: '25px', marginBottom: '20px' }}>{this.state.restaurantName}</div> </div>)
-            array.push(<div class="row" style={{ textAlign: 'center' }}>
+            arrayBag.push(<div class="row"><div class="col-md-12" style={{ textAlign: 'center', fontSize: '25px', marginBottom: '20px' }}>{this.state.restaurantName}</div> </div>)
+            arrayBag.push(<div class="row" style={{ textAlign: 'center' }}>
                 <div className="col-md-2" style={{ fontSize: "18px" }}><p>Quantity</p></div>
                 <div className="col-md-4" style={{ fontSize: "18px" }}><p>Item Name</p></div>
                 <div className="col-md-3"></div>
@@ -243,7 +244,7 @@ class DetailsPage extends Component {
 
             this.state.bag.forEach((bag) => {
                 subTotal += parseFloat(bag.itemCostTotal);
-                array.push(<div class="row" style={{ textAlign: 'center' }}>
+                arrayBag.push(<div class="row" style={{ textAlign: 'center' }}>
                     <div className="col-md-2"><p>{bag.itemCount}</p></div>
                     <div className="col-md-4"><p>{bag.itemName}</p></div>
                     <div className="col-md-3"><span id={bag.itemId} class="glyphicon glyphicon-trash" onClick={this.deleteItem}></span></div>
@@ -252,14 +253,14 @@ class DetailsPage extends Component {
 
             })
             subTotal = parseFloat(subTotal).toFixed(2);
-            array.push(<hr style={{ borderBottom: "1px solid #fff" }}></hr>)
-            array.push(<div class="row">
+            arrayBag.push(<hr style={{ borderBottom: "1px solid #fff" }}></hr>)
+            arrayBag.push(<div class="row">
                 <div class="col-md-7"></div>
                 <div class="col-md-3" style={{ fontSize: '18px' }}>Sub Total : </div>
                 <div class="col-md-1" style={{ fontSize: '18px' }}>${subTotal}</div>
                 <div class="col-md-1"></div>
             </div>)
-            bagDispay = array;
+            bagDispay = arrayBag;
             bagButtonDisplay = (<div><input type="button" class="btn btn-success" value="Place Order" onClick={this.CheckOut} /></div>)
         } else {
             bagDispay = (<div class=" emptyBag" style={{ paddingTop: '250px', paddingBottom: '250px' }}></div>)
