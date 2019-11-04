@@ -1,3 +1,0 @@
-[2019-11-03 19:28:08,385] INFO The cleaning for partition signUpRestaurant-0 is aborted and paused (kafka.log.LogCleaner)
-[2019-11-03 19:28:08,391] INFO Compaction for partition signUpRestaurant-0 is resumed (kafka.log.LogCleaner)
-[2019-11-03 19:28:08,393] INFO The cleaning for partition signUpRestaurant-0 is aborted (kafka.log.LogCleaner)
