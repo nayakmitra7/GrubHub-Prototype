@@ -1,1 +1,1 @@
-export const address="http://localhost:3001"
+export const address="http://ec2-18-188-18-252.us-east-2.compute.amazonaws.com:3001"

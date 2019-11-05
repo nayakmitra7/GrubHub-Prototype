@@ -5,7 +5,7 @@ const passport = require('passport');
 const mongoose = require('mongoose');
 mongoose.set('useCreateIndex', true);
 mongoose.set('useFindAndModify', false);
-const {address,uri} = require('../config/constants');
+const {uri,addressAllowed} = require('../config/constants');
 let cors = require('cors');
 require('../config/passport.js');
 require('dotenv').config();
@@ -16,11 +16,11 @@ connection.once('open',()=>{
 })
 app.use(passport.initialize());
 app.set('view engine', 'ejs');
-app.use(cors({ origin: address + '3000', credentials: true }));
+app.use(cors({ origin: addressAllowed, credentials: true }));
 app.use('/uploads', express.static('uploads'))
 app.use(bodyParser.json());
 app.use(function (req, res, next) {
-    res.setHeader('Access-Control-Allow-Origin', address + '3000');
+    res.setHeader('Access-Control-Allow-Origin', addressAllowed);
     res.setHeader('Access-Control-Allow-Credentials', 'true');
     res.setHeader('Access-Control-Allow-Methods', 'GET,HEAD,OPTIONS,POST,PUT,DELETE');
     res.setHeader('Access-Control-Allow-Headers', 'Access-Control-Allow-Headers, Origin,Accept, X-Requested-With, Content-Type, Access-Control-Request-Method, Access-Control-Request-Headers');

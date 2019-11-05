@@ -50,11 +50,17 @@ connectionMongoose.once('open', () => {
 })
 
 function handleTopicRequest(topic_name, fname) {
+    //var topic_name = 'root_topic';
     var consumer = connection.getConsumer(topic_name);
     var producer = connection.getProducer();
+    console.log('server is running ');
     consumer.on('message', function (message) {
+        console.log('message received for ' + topic_name + " ", fname);
+        console.log(JSON.stringify(message.value));
         var data = JSON.parse(message.value);
+
         fname.handle_request(data.data, function (err, res) {
+            console.log('after handle' + res);
             var payloads = [
                 {
                     topic: data.replyTo,
@@ -66,13 +72,13 @@ function handleTopicRequest(topic_name, fname) {
                 }
             ];
             producer.send(payloads, function (err, data) {
+                console.log(data);
             });
             return;
         });
 
     });
 }
-
 handleTopicRequest("getNewOrderOwner", newOrderOwner);
 handleTopicRequest("getConfirmedOrderOwner", confirmedOrderOwner);
 handleTopicRequest("getPreparingOrderOwner", preparingOrderOwner);
@@ -103,8 +109,8 @@ handleTopicRequest("getDetailsBasicRestaurant", detailsBasic);
 handleTopicRequest("postOwnerImage", uploadOwnerImage);
 handleTopicRequest("postRestaurantImage", uploadRestaurantImage);
 handleTopicRequest("getRestaurantSearched", restaurantSearched);
-handleTopicRequest("getDetailsBasicBuyer",detailsBasicBuyer );
-handleTopicRequest("getDetailsBuyer", detailsBuyer );
+handleTopicRequest("getDetailsBasicBuyer", detailsBasicBuyer);
+handleTopicRequest("getDetailsBuyer", detailsBuyer);
 handleTopicRequest("putUpdateBuyer", updateBuyer);
 handleTopicRequest("postBuyerImage", uploadBuyerImage);
 handleTopicRequest("postBuyerLogin", buyerLogin);
