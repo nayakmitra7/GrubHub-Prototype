@@ -65,8 +65,8 @@ class UpcomingOrder extends Component {
                 array.push(<div class="row embossed-heavy" style={{ marginLeft: '100px', marginRight: '140px', marginBottom: '10px', paddingBottom: '10px', fontWeight: 'bold', backgroundColor: 'white' }}>
                     <div class="row" style={{ backgroundColor: '#f2f2f2', marginLeft: '0px', marginRight: '0px' }}>
                         <div class="col-md-2" style={{ paddingRight: '0px' }}><h5>Order Date :</h5></div>
-                        <div class="col-md-2" style={{ paddingLeft: '0px' }}><h5>{order.orderDate}</h5></div>
-                        <div class="col-md-5"></div>
+                        <div class="col-md-3" style={{ paddingLeft: '0px' }}><h5>{order.orderDate}</h5></div>
+                        <div class="col-md-3"></div>
                         <div class="col-md-3">
                             <button class="btn " id={order._id} style={{ backgroundColor: 'Green', color: 'white', fontSize: '16px', marginTop: '0px', marginTop: '10px' }} onClick={this.sendMessage}> Send A Message</button>
                         </div>

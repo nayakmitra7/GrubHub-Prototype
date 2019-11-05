@@ -43,9 +43,9 @@ class MessageOwner extends Component {
             this.state.messageListSent.map((message) => {
                 array.push(<div class="row embossed-heavy" style={{ marginLeft: '100px', marginRight: '140px', marginBottom: '10px', paddingBottom: '10px', fontWeight: 'bold', backgroundColor: 'white' }}>
                     <div class="row" style={{ backgroundColor: '#f2f2f2', marginLeft: '0px', marginRight: '0px' }}>
-                        <div class="col-md-1" style={{ paddingRight: '0px' }}><h4>To:</h4></div>
+                        <div class="col-md-2" style={{ paddingRight: '0px' }}><h4>To:</h4></div>
                         <div class="col-md-3" style={{ paddingLeft: '0px' }}><h4>{message.receiverFirstName} {message.receiverLastName}</h4></div>
-                        <div class="col-md-2" style={{ paddingLeft: '0px' }}></div>
+                        <div class="col-md-1" style={{ paddingLeft: '0px' }}></div>
                         <div class="col-md-3" style={{ paddingRight: '0px' }}><h4>Related Order Date:</h4></div>
                         <div class="col-md-3" style={{ paddingLeft: '0px' }}><h4>{message.orderDate}</h4></div>
                         
@@ -60,10 +60,10 @@ class MessageOwner extends Component {
             this.state.messageListReceived.map((message) => {
                 array.push(<div class="row embossed-heavy" style={{ marginLeft: '100px', marginRight: '140px', marginBottom: '10px', paddingBottom: '10px', fontWeight: 'bold', backgroundColor: 'white' }}>
                     <div class="row" style={{ backgroundColor: '#f2f2f2', marginLeft: '0px', marginRight: '0px' }}>
-                        <div class="col-md-1" style={{ paddingRight: '0px' }}><h4>From:</h4></div>
+                        <div class="col-md-2" style={{ paddingRight: '0px' }}><h4>From:</h4></div>
                         <div class="col-md-3" style={{ paddingLeft: '0px' }}><h4>{message.senderFirstName} {message.senderLastName}</h4></div>
-                        <div class="col-md-3" style={{ paddingLeft: '0px' }}></div>
-                        <div class="col-md-2" style={{ paddingRight: '0px' }}><h4>Related Order Date:</h4></div>
+                        <div class="col-md-1" style={{ paddingLeft: '0px' }}></div>
+                        <div class="col-md-3" style={{ paddingRight: '0px' }}><h4>Related Order Date:</h4></div>
                         <div class="col-md-3" style={{ paddingLeft: '0px' }}><h4>{message.orderDate}</h4></div>
                         
                     </div>
