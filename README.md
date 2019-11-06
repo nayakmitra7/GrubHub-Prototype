@@ -17,4 +17,4 @@ In another terminal open the Backend folder present in Grubhub application.<br> 
 Now you can see the application launched at the address fed.
 
 ### To run the Kafka-backend
-In the terminal open the kafka-backend folder present in Grubhub application.<br>Run the command npm install.<br>Then run node server.js.<br><br>
+In the terminal open the kafka-backend folder present in Grubhub application.<br>Run the command npm install.<br>Then run node server.js.<br>
