@@ -1,5 +1,3 @@
-# Lab2-014544673
-
 
 # How to run Grubhub application
 
